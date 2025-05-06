@@ -18,7 +18,7 @@ body:
   - type: textarea
     id: steps
     attributes:
-      label: "重现步骤"
+      label: "如何复现？"
       description: "如何复现这个问题？"
       placeholder: |
         1. 第一步操作
@@ -27,27 +27,23 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: "预期行为"
-      description: "你期望的正确结果是什么？"
+      label: "上传证据"
+      description: "在此处上传错误日志/屏幕截图/屏幕录制内容"
   - type: textarea
     id: actual
     attributes:
-      label: "实际行为"
-      description: "实际发生了什么？"
-  - type: dropdown
-    id: os
-    attributes:
-      label: "Windows版本"
-      options:
-        - "Windows 7"
-        - "Windows 8/8.1"
-        - "Windows 10"
-        - "Windows 11"
+      label: "你的信息"
+      description: "请提供一些信息，方便我们解决该问题"
+      placeholder: |
+        1. Windows版本
+        2. BeaconEX版本
+        3. 运行BeaconEX的计算机已经连接到Internet
+        4. BeaconEX不是远古版
   - type: checkboxes
     id: checks
     attributes:
       label: "确认项"
       options:
-        - label: "我已查阅相关文档"
-          required: true
-        - label: "我已尝试重启应用"
+        - label: "我已尝试重启终端"
+        - label: "我已尝试重启计算机"
+        - label: "我已尝试重新安装BeaconEX"
