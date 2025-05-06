@@ -1,5 +1,5 @@
-name: Bug Report
-description: File a bug report.
+name: 錯誤報告
+description: 為我們報告你在運行BeaconEX時出現的各種錯誤，以此讓我們改進它！
 title: "[Bug]: "
 labels: ["bug", "triage"]
 projects: ["octo-org/1", "octo-org/44"]
@@ -33,8 +33,7 @@ body:
       label: Version
       description: What version of our software are you running?
       options:
-        - 1.0.2 (Default)
-        - 1.0.3 (Edge)
+        - 1.0.0
       default: 0
     validations:
       required: true
