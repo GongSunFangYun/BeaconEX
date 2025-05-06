@@ -1,25 +1,25 @@
 name: "-> Bug Report"
-description: "报告一个错误或异常行为"
+description: "報告一個錯誤或異常行為"
 title: "[BUG] "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        **请仔细填写以下信息，以便更快定位问题！**
+        **請仔細填寫以下信息，以便更快定位問題！**
   - type: textarea
     id: description
     attributes:
-      label: "问题描述"
-      description: "请清晰描述你遇到的问题"
-      placeholder: "例如：输入某个参数后程序异常退出且未返回结果"
+      label: "問題描述"
+      description: "請清晰描述你遇到的問題"
+      placeholder: "例如：輸入某個參數後程序異常退出且未返回結果"
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: "如何复现？"
-      description: "如何复现这个问题？"
+      label: "如何復現？"
+      description: "如何復現這個問題？"
       placeholder: |
         1. 第一步你做什麽了
         2. 第二步你做什麽了
@@ -28,8 +28,8 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: "上传证据"
-      description: "在此处上传错误日志/屏幕截图/屏幕录制内容"
+      label: "上傳證據"
+      description: "在此處上傳錯誤日誌/屏幕截圖/屏幕錄製內容"
   - type: input
     id: contact
     attributes:
@@ -43,6 +43,6 @@ body:
     attributes:
       label: "請確認以下信息："
       options:
-        - label: "我已尝试重启终端"
-        - label: "我已尝试重启计算机"
-        - label: "我已尝试重新安装BeaconEX"
+        - label: "我已嘗試重啟終端"
+        - label: "我已嘗試重啟計算機"
+        - label: "我已嘗試重新安裝BeaconEX"
