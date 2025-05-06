@@ -7,15 +7,14 @@
 [![Issues](https://img.shields.io/github/issues/FanYaRou/BeaconEX?style=flat-square)]()
 ![简体中文支持](https://img.shields.io/badge/简体中文-支持-ff8c00?style=flat-square&labelColor=ff8c00&color=ffd700)
 
-## 功能概述
+## 它能做什麽？
 
-BeaconEX 是一個專為 Minecraft 伺服器管理員設計的多功能命令行工具，提供以下核心功能：
-
-- 伺服器狀態查詢：支援 Java 版和基岩版伺服器的基本信息查詢
-- 網路診斷工具：TCPing/UDPing 測試伺服器響應能力
-- 遠程控制：通過 RCON 協議遠程執行指令
-- 數據分析：玩家 NBT 解析、世界檔案檢查、日誌分析
-- 實用工具：自動生成啟動腳本、玩家活動熱力圖生成
+>BeaconEX 是一個專為 Minecraft 伺服器管理員設計的多功能命令行工具，提供以下核心功能：
+>- 伺服器狀態查詢：支援 Java 版和基岩版伺服器的基本信息查詢
+>- 網路診斷工具：TCPing/UDPing 測試伺服器響應能力
+>- 遠程控制：通過 RCON 協議遠程執行指令
+>- 數據分析：玩家 NBT 解析、世界檔案檢查、日誌分析
+>- 實用工具：自動生成啟動腳本、玩家活動熱力圖生成
 
 ## 系統需求
 
