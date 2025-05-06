@@ -21,28 +21,27 @@ body:
       label: "如何复现？"
       description: "如何复现这个问题？"
       placeholder: |
-        1. 第一步操作
-        2. 第二步操作
-        3. 出现错误
+        1. 第一步你做什麽了
+        2. 第二步你做什麽了
+        ......
+        出現錯誤：錯誤
   - type: textarea
     id: expected
     attributes:
       label: "上传证据"
       description: "在此处上传错误日志/屏幕截图/屏幕录制内容"
-  - type: textarea
-    id: actual
+    - type: input
+    id: contact
     attributes:
-      label: "你的信息"
-      description: "请提供一些信息，方便我们解决该问题"
-      placeholder: |
-        1. Windows版本
-        2. BeaconEX版本
-        3. 运行BeaconEX的计算机已经连接到Internet
-        4. BeaconEX不是远古版
+      label: 系統版本
+      description: 請在此填入你的Windows系統版本
+      placeholder: 例如：Windows10 22H2
+    validations:
+      required: false      
   - type: checkboxes
     id: checks
     attributes:
-      label: "确认项"
+      label: "請確認以下信息："
       options:
         - label: "我已尝试重启终端"
         - label: "我已尝试重启计算机"
