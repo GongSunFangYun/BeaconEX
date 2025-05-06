@@ -1,4 +1,4 @@
-name: "Bug Report"
+name: "-> Bug Report"
 description: "报告一个错误或异常行为"
 title: "[BUG] "
 labels: ["bug"]
@@ -33,9 +33,9 @@ body:
     - type: input
     id: contact
     attributes:
-      label: 系統版本
-      description: 請在此填入你的Windows系統版本
-      placeholder: 例如：Windows10 22H2
+      label: "系統版本"
+      description: "請在此填入你的Windows系統版本"
+      placeholder: "例如：Windows10 22H2"
     validations:
       required: false      
   - type: checkboxes
