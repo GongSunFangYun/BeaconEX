@@ -1,53 +1,53 @@
-name: 錯誤報告
-description: 為我們報告你在運行BeaconEX時出現的各種錯誤，以此讓我們改進它！
-title: "[Bug]: "
-labels: ["bug", "triage"]
-projects: ["octo-org/1", "octo-org/44"]
-assignees:
-  - octocat
+name: "Bug Report"
+description: "报告一个错误或异常行为"
+title: "[BUG] "
+labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        感謝您能為我們提供寶貴的意見反饋!
+        **请仔细填写以下信息，以便更快定位问题！**
   - type: textarea
-    id: what-happene
+    id: description
     attributes:
-      label: 在你運行BeaconEX時，出現了什麽奇妙的錯誤?
-      description: 回答我！Looking my eyes！
-      placeholder: 發生了什麽......
+      label: "问题描述"
+      description: "请清晰描述你遇到的问题"
+      placeholder: "例如：输入某个参数后程序异常退出且未返回结果"
     validations:
       required: true
-  - type: dropdown
-    id: version
-    attributes:
-      label: Version
-      description: 你在運行什麽版本的BeaconEX時出現了這個錯誤?
-      options:
-        - 1.0.0
-      default: 0
-    validations:
-      required: true
-  - type: dropdown
-    id: browsers
-    attributes:
-      label: 你正在使用什麽版本的Windows?
-      multiple: true
-      options:
-        - Windows 7
-        - Windows 8/8.1
-        - Windows 10
-        - Windows 11
   - type: textarea
-    id: logs
+    id: steps
     attributes:
-      label: 上傳問題截圖/屏幕錄製 
-      render: shell
+      label: "重现步骤"
+      description: "如何复现这个问题？"
+      placeholder: |
+        1. 第一步操作
+        2. 第二步操作
+        3. 出现错误
+  - type: textarea
+    id: expected
+    attributes:
+      label: "预期行为"
+      description: "你期望的正确结果是什么？"
+  - type: textarea
+    id: actual
+    attributes:
+      label: "实际行为"
+      description: "实际发生了什么？"
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Windows版本"
+      options:
+        - "Windows 7"
+        - "Windows 8/8.1"
+        - "Windows 10"
+        - "Windows 11"
   - type: checkboxes
-    id: terms
+    id: checks
     attributes:
-      label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://example.com). 
+      label: "确认项"
       options:
-        - label: I agree to follow this project's Code of Conduct
+        - label: "我已查阅相关文档"
           required: true
+        - label: "我已尝试重启应用"
