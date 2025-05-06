@@ -30,7 +30,7 @@ body:
     attributes:
       label: "上传证据"
       description: "在此处上传错误日志/屏幕截图/屏幕录制内容"
-    - type: input
+  - type: input
     id: contact
     attributes:
       label: "系統版本"
