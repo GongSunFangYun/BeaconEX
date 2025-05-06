@@ -1,29 +1,29 @@
 name: "-> Feature Request"
-description: "提议一个新功能或改进某個已存在的模塊"
+description: "提議一個新功能或改進某個已存在的模塊"
 title: "[FUR] "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        **请描述你的需求，我们会尽快评估！**
+        **請描述你的需求，我們會盡快評估！**
   - type: textarea
     id: description
     attributes:
       label: "功能描述"
-      description: "你希望新增或改进什么功能？"
+      description: "你希望新增或改進什麼功能？"
       placeholder: "例如：希望增加伺服器配置文件自動修改功能"
     validations:
       required: true
   - type: textarea
     id: reason
     attributes:
-      label: "使用场景"
-      description: "爲什麽要添加這個功能？"
+      label: "使用場景"
+      description: "為什麼要添加這個功能？"
   - type: checkboxes
     id: options
     attributes:
-      label: "附加选项"
+      label: "附加選項"
       options:
-        - label: "我有设计草图或示例代碼"
-        - label: "我愿意加入开发組（需要經過考核）"
+        - label: "我有一些靈感或示例代碼"
+        - label: "我願意加入開發組（需要經過考核）"
