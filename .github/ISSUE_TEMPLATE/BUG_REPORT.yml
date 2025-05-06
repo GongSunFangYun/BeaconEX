@@ -9,29 +9,20 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
-  - type: input
-    id: contact
-    attributes:
-      label: Contact Details
-      description: How can we get in touch with you if we need more info?
-      placeholder: ex. email@example.com
-    validations:
-      required: false
+        感謝您能為我們提供寶貴的意見反饋!
   - type: textarea
-    id: what-happened
+    id: what-happene
     attributes:
-      label: What happened?
-      description: Also tell us, what did you expect to happen?
-      placeholder: Tell us what you see!
-      value: "A bug happened!"
+      label: 在你運行BeaconEX時，出現了什麽奇妙的錯誤?
+      description: 回答我！Looking my eyes！
+      placeholder: 發生了什麽......
     validations:
       required: true
   - type: dropdown
     id: version
     attributes:
       label: Version
-      description: What version of our software are you running?
+      description: 你在運行什麽版本的BeaconEX時出現了這個錯誤?
       options:
         - 1.0.0
       default: 0
@@ -40,18 +31,17 @@ body:
   - type: dropdown
     id: browsers
     attributes:
-      label: What browsers are you seeing the problem on?
+      label: 你正在使用什麽版本的Windows?
       multiple: true
       options:
-        - Firefox
-        - Chrome
-        - Safari
-        - Microsoft Edge
+        - Windows 7
+        - Windows 8/8.1
+        - Windows 10
+        - Windows 11
   - type: textarea
     id: logs
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      label: 上傳問題截圖/屏幕錄製 
       render: shell
   - type: checkboxes
     id: terms
