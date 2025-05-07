@@ -1,4 +1,4 @@
-# BeaconEX - Minecraft 伺服器多功能管理工具
+# BeaconEX - Minecraft 伺服器命令行工具箱
 
 [![GitHub release](https://img.shields.io/github/v/release/FanYaRou/BeaconEX?style=flat-square)]()
 [![Downloads](https://img.shields.io/github/downloads/FanYaRou/BeaconEX/total?style=flat-square)]()
