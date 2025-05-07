@@ -34,7 +34,7 @@
 4. 如環境變量未正確配置，請手動將安裝目錄添加至 Path 變量
 
 ## 命令使用指南
-### 查詢模塊
+### 查詢功能
 ```bash
 # 查詢 Java 版伺服器（默認端口可省略 -p 參數）
 bex -java -ip mc.example.com -p 25565
@@ -43,7 +43,7 @@ bex -java -ip mc.example.com -p 25565
 # 查詢基岩版伺服器（默認端口可省略 -p 參數）
 bex -bedrock -ip mc.example.com -p 19132
 ```
-### 遠程控制模塊
+### 遠程控制功能
 ```bash
 # RCON 執行單個命令（默認端口可省略 -p 參數）
 bex -rcon -ip mc.example.com -p 25565 -rp 25575 -pw password -cmd "say Hello"
@@ -52,7 +52,7 @@ bex -rcon -ip mc.example.com -p 25565 -rp 25575 -pw password -cmd "say Hello"
 # RCON 交互模式（默認端口可省略 -p 參數）
 bex -rcon -ip mc.example.com -p 25565 -rp 25575 -pw password -cg
 ```
-### 數據包測試模塊
+### 數據包測試功能
 ```bash
 ### 網路測試
 # TCPing 測試（Java 版，默認端口可省略 -p 參數）
@@ -62,7 +62,7 @@ bex -java -ip mc.example.com -p 25565 -ping Ping次數（選填，默認4次）
 # UDPing 測試（基岩版，默認端口可省略 -p 參數）
 bex -bedrock -ip mc.example.com -p 19132 -ping Ping次數（選填，默認4次）
 ```
-### 數據分析模塊
+### 數據分析功能
 ```bash
 # 日誌分析（指定文件路徑）
 bex -la -lp "C:/Server/logs/latest.log"
@@ -75,7 +75,7 @@ bex -nbt -np "C:/Server/world/playerdata/XXXXXXXX.dat"
 # level.dat 完整性檢查（指定文件夾路徑）
 bex -wc -np "C:/Server/"
 ```
-### 生成模塊
+### 生成功能
 ```bash
 # 生成啟動腳本（指定文件路徑）
 bex -genbat -rq "paper1.20.1核心，最大分配4G，最小分配2G。"
