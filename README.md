@@ -105,7 +105,7 @@ enable-rcon=true
 rcon.password=你的RCON連接密碼
 rcon.port=你的RCON端口
 ```
-4. 如遇到任何問題，請提交 [issues](https://github.com/FanYaRou/BeaconEX/issues/new) 至我們的代碼倉庫
+4. 如遇到任何問題，請提交 [issues](https://github.com/FanYaRou/BeaconEX/issues/new)
 
 ## 未來計劃
 
