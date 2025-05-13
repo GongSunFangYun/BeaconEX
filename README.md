@@ -16,11 +16,18 @@
 >- 數據分析：玩家 NBT 解析、世界檔案檢查、日誌分析
 >- 實用工具：自動生成啟動腳本、玩家活動熱力圖生成
 
+## 構建説明
+
+- 目前為該程式的構建分爲了[Installer-Build](https://github.com/FanYaRou/BeaconEX/releases/tag/INSTALLER-BUILD)和[Release-Build](https://github.com/FanYaRou/BeaconEX/releases)兩種方式
+- Installer-Build專門為安裝程式進行發佈
+- Release-Build專門為程式本體進行發佈，以方便```BeaconEX```更新
+
 ## 系統需求
 
 - 作業系統：Windows 10 或更新版本（不太支援 Windows 7）
 - 運行環境：已配置 Java 運行環境
 - 權限要求：建議以管理員身份運行
+- 不要使用反向代理程序（steamcommunity302，steam++等）安裝本地證書，否則會影響到更新功能
 
 ## 使用者需求
 - 懂得```Windows Powershell``` / ```Windows Command Prompt```用法
