@@ -1,10 +1,10 @@
 # BeaconEX - Minecraft 伺服器命令行工具箱
 
-[![GitHub release](https://img.shields.io/github/v/release/FanYaRou/BeaconEX?style=flat-square)]()
-[![Downloads](https://img.shields.io/github/downloads/FanYaRou/BeaconEX/total?style=flat-square)]()
-[![Stars](https://img.shields.io/github/stars/FanYaRou/BeaconEX?style=flat-square)]()
-[![Forks](https://img.shields.io/github/forks/FanYaRou/BeaconEX?style=flat-square)]()
-[![Issues](https://img.shields.io/github/issues/FanYaRou/BeaconEX?style=flat-square)]()
+[![GitHub release](https://img.shields.io/github/v/release/GongSunFangYun/BeaconEX?style=flat-square)]()
+[![Downloads](https://img.shields.io/github/downloads/GongSunFangYun/BeaconEX/total?style=flat-square)]()
+[![Stars](https://img.shields.io/github/stars/GongSunFangYun/BeaconEX?style=flat-square)]()
+[![Forks](https://img.shields.io/github/forks/GongSunFangYun/BeaconEX?style=flat-square)]()
+[![Issues](https://img.shields.io/github/issues/GongSunFangYun/BeaconEX?style=flat-square)]()
 ![简体中文支持](https://img.shields.io/badge/简体中文-支持-ff8c00?style=flat-square&labelColor=ff8c00&color=ffd700)
 
 ## 它能做什麽？
