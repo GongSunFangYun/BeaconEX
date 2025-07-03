@@ -61,13 +61,8 @@ bex -rcon -ip mc.example.com -p 25565 -rp 25575 -pw password -cg
 ```
 ### 數據包測試功能
 ```bash
-### 網路測試
-# TCPing 測試（Java 版，默認端口可省略 -p 參數）
-bex -java -ip mc.example.com -p 25565 -ping Ping次數（選填，默認4次）
-```
-```bash
-# UDPing 測試（基岩版，默認端口可省略 -p 參數）
-bex -bedrock -ip mc.example.com -p 19132 -ping Ping次數（選填，默認4次）
+# 網路測試
+bex -ping mc.example.com -pc Ping次數（選填，默認4次）
 ```
 ### 數據分析功能
 ```bash
