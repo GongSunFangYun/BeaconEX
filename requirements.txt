@@ -1,0 +1,9 @@
+nbtlib~=2.0.4
+mcrcon~=0.7.0
+mcstatus~=12.0.1
+requests~=2.32.4
+matplotlib~=3.10.3
+pillow~=11.2.1
+chardet~=5.2.0
+openai~=1.86.0
+icmplib~=3.0.4
