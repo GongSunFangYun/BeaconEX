@@ -4,7 +4,7 @@ import openai
 from functions.utils import TextFormat, log_error, output, log_info
 # 使用第三方人工智能API（阿里云）进行智能脚本生成
 DEFAULT_API_CONFIG = {
-    "api_key": "sk-76bbbc6fbfb8415c8b96f7aceb7ac512",
+    "api_key": "sk-11EU9DH9SHD2OEWDIOSANCSKOFNONEOWQPDSA3",
     "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
     "model": "qwen-plus"
 }
