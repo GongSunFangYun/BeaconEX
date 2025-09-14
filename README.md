@@ -109,7 +109,12 @@ rcon.port=你的RCON端口
 ```
 4. 如遇到任何問題，請提交 [issues](https://github.com/FanYaRou/BeaconEX/issues/new)
 
-## 未來計劃
+## Star History
 
-- 增加對 ```Linux``` 和 ```MacOS``` 平台的支援
-- 添加更多數據可視化功能
+<a href="https://www.star-history.com/#GongSunFangYun/BeaconEX&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=GongSunFangYun/BeaconEX&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=GongSunFangYun/BeaconEX&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=GongSunFangYun/BeaconEX&type=Date" />
+ </picture>
+</a>
