@@ -39,14 +39,14 @@ body:
     id: evidence
     attributes:
       label: "錯誤證據"
-      description: "請提供錯誤日誌、屏幕截圖或相關信息（可拖拽上傳文件）"
+      description: "請提供錯誤日誌、屏幕截圖或相關信息"
       placeholder: "錯誤日誌內容、截圖描述等..."
   - type: input
     id: system_version
     attributes:
       label: "系統版本"
       description: "請輸入你的操作系統版本"
-      placeholder: "例如：Windows 11 23H2、Windows 10 22H2、Ubuntu 22.04"
+      placeholder: "例如：Windows 11 24H2"
     validations:
       required: true
   - type: input
