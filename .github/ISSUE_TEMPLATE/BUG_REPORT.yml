@@ -1,4 +1,4 @@
-name: "-> Bug Report"
+name: "Bug Report"
 description: "報告一個錯誤或異常行為"
 title: "[BUG] "
 labels: ["bug"]
@@ -18,31 +18,52 @@ body:
   - type: textarea
     id: steps
     attributes:
-      label: "如何復現？"
-      description: "如何復現這個問題？"
+      label: "重現步驟"
+      description: "請詳細說明重現這個問題的具體步驟"
       placeholder: |
-        1. 第一步你做什麽了
-        2. 第二步你做什麽了
-        ......
-        出現錯誤：錯誤
+        1. 打開 BeaconEX
+        2. 執行命令：...
+        3. 輸入參數：...
+        4. 觀察到錯誤：...
+    validations:
+      required: true
   - type: textarea
     id: expected
     attributes:
-      label: "上傳證據"
-      description: "在此處上傳錯誤日誌/屏幕截圖/屏幕錄製內容"
+      label: "預期行為"
+      description: "你期望的正常行為是什麼？"
+      placeholder: "例如：正常情況下應該返回處理結果而不是異常退出"
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: "錯誤證據"
+      description: "請提供錯誤日誌、屏幕截圖或相關信息（可拖拽上傳文件）"
+      placeholder: "錯誤日誌內容、截圖描述等..."
   - type: input
-    id: contact
+    id: system_version
     attributes:
       label: "系統版本"
-      description: "請在此填入你的Windows系統版本"
-      placeholder: "例如：Windows10 22H2"
+      description: "請輸入你的操作系統版本"
+      placeholder: "例如：Windows 11 23H2、Windows 10 22H2、Ubuntu 22.04"
     validations:
-      required: false      
+      required: true
+  - type: input
+    id: beacon_version
+    attributes:
+      label: "BeaconEX 版本"
+      description: "請輸入你使用的 BeaconEX 版本號"
+      placeholder: "例如：v2.1.0"
+    validations:
+      required: true
   - type: checkboxes
     id: checks
     attributes:
-      label: "請確認以下信息："
+      label: "前置檢查"
+      description: "請確認你已嘗試以下基本排查步驟"
       options:
-        - label: "我已嘗試重啟終端"
-        - label: "我已嘗試重啟計算機"
-        - label: "我已嘗試重新安裝BeaconEX"
+        - label: "我已嘗試重装BeaconEX程序"
+        - label: "我已嘗試重啟Windows Terminal"
+        - label: "我已確認使用的是最新版本BeaconEX"
+        - label: "我已檢查文檔和現有Issue，確認是新的問題"
