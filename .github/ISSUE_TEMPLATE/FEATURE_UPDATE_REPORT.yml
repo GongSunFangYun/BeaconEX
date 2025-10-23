@@ -34,7 +34,7 @@ body:
     attributes:
       label: "系統版本"
       description: "請輸入你的操作系統版本"
-      placeholder: "例如：Windows 11 23H2、Ubuntu 22.04、macOS 14.0"
+      placeholder: "例如：Windows 11 24H2"
     validations:
       required: true
   - type: checkboxes
