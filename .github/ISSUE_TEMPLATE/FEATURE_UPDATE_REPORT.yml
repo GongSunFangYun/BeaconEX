@@ -12,18 +12,26 @@ body:
     attributes:
       label: "功能描述"
       description: "你希望新增或改進什麼功能？"
-      placeholder: "例如：希望增加伺服器配置文件自動修改功能"
+      placeholder: "例如：希望增加伺服器配置文件自動修改功能。"
     validations:
       required: true
   - type: textarea
     id: reason
     attributes:
-      label: "使用場景"
+      label: "功能描述"
       description: "為什麼要添加這個功能？"
+      placeholder: "例如：因為我覺得這個功能是十分必要的..."
+  - type: textarea
+    id: reason
+    attributes:
+      label: "提供見解"
+      description: "如果你覺得你有一些靈感，你可以在此告訴我們如何改進/添加該功能。"
+      placeholder: "例如：我認為這一部分可以這麼實現..."
   - type: checkboxes
     id: options
     attributes:
       label: "附加選項"
       options:
-        - label: "我有一些靈感或示例代碼"
-        - label: "我願意加入開發組（需要經過考核）"
+        - label: "我使用的是最新版的BeaconEX"
+        - label: "我的系統不是古董或者文物"
+        - label: "我希望加入BeaconEX的開發組（需要經過考核）"
