@@ -54,7 +54,7 @@ body:
     attributes:
       label: "BeaconEX 版本"
       description: "請輸入你使用的 BeaconEX 版本號"
-      placeholder: "例如：v2.1.0"
+      placeholder: "例如：v1.0.0"
     validations:
       required: true
   - type: checkboxes
@@ -63,7 +63,7 @@ body:
       label: "前置檢查"
       description: "請確認你已嘗試以下基本排查步驟"
       options:
-        - label: "我已嘗試重装BeaconEX程序"
-        - label: "我已嘗試重啟Windows Terminal"
-        - label: "我已確認使用的是最新版本BeaconEX"
-        - label: "我已檢查文檔和現有Issue，確認是新的問題"
+        - label: "我已嘗試重装 BeaconEX 程式"
+        - label: "我已嘗試重啟 Windows Terminal"
+        - label: "我已確認使用的是最新版本 BeaconEX"
+        - label: "我已檢查文檔和現有 Issue，確認是新的問題"
