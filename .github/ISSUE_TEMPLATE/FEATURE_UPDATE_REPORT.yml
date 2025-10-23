@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **請描述你的需求，我們會盡快評估！**
+        **請描述你的需求，我們會盡快評估！"
   - type: textarea
     id: description
     attributes:
@@ -29,6 +29,14 @@ body:
       label: "實現建議"
       description: "如果你有具體的實現想法，可以在這裡分享"
       placeholder: "例如：我認為可以通過解析配置文件格式，提供可視化編輯界面..."
+  - type: input
+    id: system_version
+    attributes:
+      label: "系統版本"
+      description: "請輸入你的操作系統版本"
+      placeholder: "例如：Windows 11 23H2、Ubuntu 22.04、macOS 14.0"
+    validations:
+      required: true
   - type: checkboxes
     id: options
     attributes:
@@ -36,5 +44,4 @@ body:
       description: "請選擇符合你情況的選項"
       options:
         - label: "我使用的是最新版本的 BeaconEX"
-        - label: "我的系統環境是相對較新的版本"
         - label: "我有興趣參與 BeaconEX 的開發（需要經過考核）"
