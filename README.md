@@ -1,4 +1,5 @@
 # BeaconEX - Minecraft 伺服器命令行工具箱
+**A NEW VERSION WILL BE RELEASED: V2.0.0**
 
 [![GitHub release](https://img.shields.io/github/v/release/GongSunFangYun/BeaconEX?style=flat-square)]()
 [![Downloads](https://img.shields.io/github/downloads/GongSunFangYun/BeaconEX/total?style=flat-square)]()
