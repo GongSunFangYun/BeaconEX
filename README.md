@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="resources/ICON.ico" alt="Logo" width="80" height="80">
+
 # BeaconEX - Minecraft 伺服器命令行工具箱
 
 [![GitHub release](https://img.shields.io/github/v/release/GongSunFangYun/BeaconEX?style=flat-square)]()
@@ -102,7 +106,7 @@ enable-rcon=true
 rcon.password=你的 RCON 连接密码
 rcon.port=你的 RCON 端口
 ```
-4. 如遇到任何问题，请提交 [issues]（https://github.com/FanYaRou/BeaconEX/issues/new）
+4. 如遇到任何问题，请提交 [issues](https://github.com/GongSunFangYun/BeaconEX/issues/new)
 
 ## Star History
 
