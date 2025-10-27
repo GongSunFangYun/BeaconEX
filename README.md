@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="resources/ICON.ico" alt="Logo" width="80" height="80">
+<img src="Resources/ICON.png" alt="Logo" width="80" height="80">
 
 # BeaconEX - Minecraft 伺服器命令行工具箱
 
