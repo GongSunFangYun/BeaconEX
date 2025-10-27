@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="Resources/ICON.png" alt="Logo" width="80" height="80">
+<img src="Resources/ICON.png" alt="Logo" width="160" height="160">
 
-# BeaconEX - Minecraft 伺服器命令行工具箱
+# BeaconEX - 我们Minecraft也要有自己的[图吧工具箱](https://tubatool.com.cn/?lang=ZH)
 
 [![GitHub release](https://img.shields.io/github/v/release/GongSunFangYun/BeaconEX?style=flat-square)]()
 [![Downloads](https://img.shields.io/github/downloads/GongSunFangYun/BeaconEX/total?style=flat-square)]()
@@ -12,32 +12,42 @@
 [![License](https://img.shields.io/github/license/GongSunFangYun/BeaconEX?style=flat-square)]()
 ![简体中文支持](https://img.shields.io/badge/简体中文-支持-ff8c00?style=flat-square&labelColor=ff8c00&color=ffd700)
 
-## 它能做什麽？
+</div>
 
->BeaconEX 是一个专为 Minecraft 服务器管理员设计的多功能命令行工具，提供以下核心功能：
->- 服务器状态查询：支持 Java 版和基岩版服务器的基本信息查询
->- 网络诊断工具：Ping 测试服务器响应能力
->-远程控制：通过 RCON 协议远程执行指令
->- 数据分析：玩家 NBT 解析、世界档案检查、日志分析
->- 实用工具：自动生成启动脚本、玩家活动热力图生成、DLL 注入、P2P 联机、世界备份、图标生成
+## 它能做什么？
+
+- BeaconEX的设计初衷就是为不同维度的Minecraft玩家提供服务，让大部分玩家都可以找到适合自己所使用的功能
+- 不过主体功能更偏向于服务器运维管理，适合服主/服管/服内玩家使用
+- 功能列表（v2.0.0）：
+>- P2P联机功能
+>- 热力图生成功能
+>- 服务器启动脚本生成功能
+>- 服务器徽标生成功能
+>- 日志分析功能
+>- 基岩版DLL注入功能
+>- NBT分析功能
+>- NBT编辑功能
+>- Ping服务器功能
+>- 查询服务器信息功能
+>- RCON远程控制功能
+>- 世界分析功能
+>- 世界备份功能
+>- 正在开发...
+- **下为不同维度玩家推荐使用的功能：**
+>- **对于服务器运维**：查询双版本服务器信息，生成服务器玩家游玩天数热力图，生成服务器启动脚本，世界自动备份，日志分析，世界分析，RCON远程控制，测试服务器延迟抖动...
+>- **对于普通用户**：NBT编辑器，NBT分析器，P2P联机，基岩版客户端注入，查询自己游玩的服务器信息，测试自己游玩的服务器延迟抖动，分析客户端崩溃日志，为自己的存档备份...
+>- **对于基岩版玩家**：基岩版DLL客户端注入，世界备份[需要管理员权限，因为存档位于AppData]，查询自己游玩的服务器信息，测试自己游玩的服务器延迟抖动...
 
 ## 系统需求
-
--作系统：Windows 10 或更新版本（不太支持 Windows 7）
-- 运行环境：已配置 Java 运行环境
-- 权限要求：建议以管理员身份运行
-- 不要使用反向代理程序（steamcommunity302，steam++等）安装本地证书，否则会影响到更新功能
-
-##用户需求
-- 懂得'''Windows Powershell''' / '''Windows Command Prompt'''用法
-- 了解终端程序中的主命令，参数和语法分别是什么
+- 操作系统：当前仅支持Windows 7+(7/8/8.1/10/11)
+- 运行环境：计算机已安装```命令提示符/Powershell/终端```
+- 权限要求：除P2P联机模块需要管理员权限之外，其他一般不需要管理员权限
 
 ## 安装说明
-
-1. 下载 BeaconEX.msi 安装包
+1. 下载 BeaconEX-win-Installer-vX.X.X.msi 安装包
 2. 以管理员身份运行安装程序
-3. 按照指引完成安装（程序会自动添加至系统环境变量）
-4. 如环境变量未正确配置，请手动将安装目录添加至 Path 变量
+3. 按照指引完成安装（程序会自动将安装路径添加至系统环境变量）
+4. 如环境变量未正确配置，请手动将安装目录添加至 Path 变量（例如直接使用zip）
 
 ## 命令使用指南
 ### 查询功能
