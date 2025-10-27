@@ -1,4 +1,5 @@
 # BeaconEX - Minecraft 伺服器命令行工具箱
+# README暂未更改，请先别看这些东西
 
 [![GitHub release](https://img.shields.io/github/v/release/GongSunFangYun/BeaconEX?style=flat-square)]()
 [![Downloads](https://img.shields.io/github/downloads/GongSunFangYun/BeaconEX/total?style=flat-square)]()
@@ -16,12 +17,6 @@
 >-远程控制：通过 RCON 协议远程执行指令
 >- 数据分析：玩家 NBT 解析、世界档案检查、日志分析
 >- 实用工具：自动生成启动脚本、玩家活动热力图生成、DLL 注入、P2P 联机、世界备份、图标生成
-
-## 构建帮助
-
-- 目前为该程序的构建分为[Installer-Build]（https://github.com/FanYaRou/BeaconEX/releases/tag/INSTALLER-BUILD）和[Release-Build]（https://github.com/FanYaRou/BeaconEX/releases）两种方式
-- Installer-Build 专门为安装程序进行发布
-- Release-Build 专门为程式本体进行发布，以方便'''BeaconEX'''更新
 
 ## 系统需求
 
