@@ -1,0 +1,23 @@
+# START RCON LOGIN
+LOGIN 127.0.0.1:11451
+RCONCFG [PORT=25575,PWD=114514]
+# END RCON LOGIN
+
+# START FUNCTION
+LOOP loop1 (freq=3) {
+
+EXEC module1 {
+"say hello world"
+"say goodbye world"
+}
+
+WAIT 1
+
+EXEC module2 {
+"say hello world"
+"say goodbye world"
+	}
+}
+
+# END FUNCTION
+

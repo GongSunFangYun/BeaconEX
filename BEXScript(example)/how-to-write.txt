@@ -1,0 +1,40 @@
+BEXScript的语法极其简单，主要用于-rcon模块的-s/--script功能，旨在于实现自动化运维
+当时版本为Indev 0.1.0，未来会支持更复杂的逻辑
+----------------------------------
+# START RCON LOGIN 与 # END RCON LOGIN 注释块是必要的
+你需要在内部写入LOGIN与RCONCFG函数，用于指定需要登录的服务器相关信息
+示例：
+# START RCON LOGIN
+LOGIN 127.0.0.1:12345
+RCONCFG [PORT=25575,PWD=114514]
+# END RCON LOGIN
+（开始登录服务器127.0.0.1:12345，RCON端口25575，RCON密码114514）
+----------------------------------
+# START FUNCTION 与 # END FUNCTION 注释块同样是必要的
+你需要在内部写入需要执行的逻辑
+当前所支持的函数：
+EXEC MODULE_NAME {} 执行MODULE_NAME
+WAIT INT_SECOND 等待整秒数后执行后续逻辑（类似time.sleep()）
+LOOP LOOP_NAME (freq=INT_FREQUENCY) {} 循环LOOP_NAME持续整数频率（即循环次数）
+花括号不得缺失，否则会导致运行错误
+示例：
+# START FUNCTION
+LOOP loop1 (freq=3) {
+
+EXEC module1 {
+"say hello world"
+"say goodbye world"
+}
+
+WAIT 1
+
+EXEC module2 {
+"say hello steve"
+"say goodbye alex"
+	}
+}
+
+# END FUNCTION
+（开始执行函数，整体循环3次->执行module1，运行2条命令->等待1秒->执行module2，运行2条命令->结束）
+----------------------------------
+现在这个开发版的BEXScript非常潦草，未来会更改函数名称和语法，使得其更加好写，可能会演化成VisualBasic那种形式
