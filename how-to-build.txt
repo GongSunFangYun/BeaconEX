@@ -1,0 +1,19 @@
+1.首先，你需要准备两个独立的环境，一个是已经下载好Python依赖和Pyinstaller/Nuitka的Python3.12+环境，另一个是安装了Go-SDK1.21.4的Go环境
+2.然后，你需要在Python环境分别构建每个模块的exe文件，并按照下列规则重命名
+GenHeatMap.py -> bex_heatmap.exe
+GenLaunchBat.py -> bex_batmaker.exe
+IconMaker.py -> bex_iconmaker.exe
+LogAnalysis.py -> bex_loganalyzer.exe
+MCBEDLLInjector.py -> bex_injector.exe
+NBTAnalysis.py -> bex_nbtanalyzer.exe
+NBTEditor.py -> bex_nbteditor.exe
+EasyTierP2P.py -> bex_p2p.exe
+PingServer.py -> bex_ping.exe
+QueryServer.py -> bex_query.exe
+RCONRemoteControl.py -> bex_rcon.exe
+WorldAnalysis.py -> bex_worldanalyzer.exe
+WorldBackUp.py -> bex_backup.exe
+3.然后，把命名好的一堆exe放到modules/文件夹
+4.在Go环境使用syso.exe指定路径和app.manifest生成resources.syso，并运行go build以编译bex.go为bex.exe
+5.最后，将bex.exe放到modules/的同级目录，此时应可以使用了
+*6.如果你想封装成msi文件，请使用我的模板：AdvancedInstallerData.aip进行构建操作（需要安装Advanced Installer 22+）
