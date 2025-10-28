@@ -49,44 +49,70 @@
 3. 按照指引完成安装（程序会自动将安装路径添加至系统环境变量）
 4. 如环境变量未正确配置，请手动将安装目录添加至 Path 变量（例如直接使用zip）
 
-## 命令使用指南（待更新）
-### 查询功能
+## 命令使用指南
+### 查询服务器相关
 ```bash
-# 查询 Java 版服务器（默认端口可省略 -p 参数）
-bex -java -ip mc.example.com -p 25565
+# 查询 Java 版服务器（支持解析A/AAA/SRV记录，支持解析纯IPV4/V6与纯主机名，不带端口默认为25565）
+bex -query -java -t mc.example.com
+bex -query -java -t mc.example.com:12345
+bex -query -java -t XXX.XXX.XXX.XXX
+bex -query -java -t XXX.XXX.XXX.XXX:12345
 ```
 ```bash
-# 查询基岩版服务器（默认端口可省略 -p 参数）
-bex -bedrock -ip mc.example.com -p 19132
+# 查询基岩版服务器（支持解析A/AAA/SRV记录，支持解析纯IPV4/V6与纯主机名，不带端口默认为19132）
+bex -query -bedrock -t mc.example.com
+bex -query -bedrock -t mc.example.com:12345
+bex -query -bedrock -t XXX.XXX.XXX.XXX
+bex -query -bedrock -t XXX.XXX.XXX.XXX:12345
 ```
-### 远程控制功能
+### 远程控制相关
 ```bash
-# RCON 执行单个命令（默认端口可省略 -p 参数）
-bex -rcon -ip mc.example.com -p 25565 -rp 25575 -pw password -cmd "say Hello"
-```
-```bash
-# RCON 交互模式（默认端口可省略 -p 参数）
-bex -rcon -ip mc.example.com -p 25565 -rp 25575 -pw password -cg
-```
-### 数据包测试功能
-```bash
-# 网络测试
-bex -ping mc.example.com -pc Ping 次数（选填，默认 4 次）
-```
-### 数据分析功能
-```bash
-# 日志分析（指定文档路径）
-bex -la -lp "C:/Server/logs/latest.log"
+# RCON 执行单个命令（支持解析A/AAA/SRV记录，支持解析纯IPV4/V6与纯主机名，不带端口默认JE25565/BE19132，RCON不帶端口默认25575）
+bex -rcon -t mc.example.com -rp 12345 -rpw 123456 -cmd "say hello world！"
+bex -rcon -t mc.example.com:12345 -rpw 123456 -cmd "say hello world"
+bex -rcon -t XXX.XXX.XXX.XXX:12345 -rpw 123456 -cmd "say hello world"
+bex -rcon -t XXX.XXX.XXX.XXX -rpw 123456 -cmd "say hello world"
 ```
 ```bash
-# 玩家 NBT 分析（指定文档路径）
+# RCON 交互模式（支持解析A/AAA/SRV记录，支持解析纯IPV4/V6与纯主机名，不带端口默认JE25565/BE19132，RCON不帶端口默认25575）
+bex -rcon -t mc.example.com -rp 12345 -rpw 123456 -cg
+bex -rcon -t mc.example.com:12345 -rpw 123456 -cg
+bex -rcon -t XXX.XXX.XXX.XXX -rpw 123456 -cg
+bex -rcon -t XXX.XXX.XXX.XXX:12345 -rpw 123456 -cg
+```
+```bash
+# RCON 脚本解释器模式
+bex -rcon -s
+```
+### 延迟测试相关
+```bash
+# Ping单次测试
+bex -ping -t mc.example.com
+bex -ping -t mc.example.com -pf 10
+```
+```bash
+# Ping持续测试
+bex -ping -t mc.example.com -r
+bex -ping -t mc.example.com -r -pi 0.5
+```
+### 数据处理相关
+```bash
+# 日志分析（指定日志文件路径）
+bex -log -lp "C:/Server/logs/latest.log"
+```
+```bash
+# 玩家 NBT 分析（指定单个玩家NBT路径）
 bex -nbt -np "C:/Server/world/playerdata/XXXXXXXX.dat"
 ```
 ```bash
-# level.dat 完整性检查（指定文件夹路径）
-bex -wc -np "C:/Server/"
+# level.dat 完整性检查（如果世界文件夹是分散的，则只指定服务器根目录便可，模块会自动扫描 level.dat 文件位置）
+bex -world -wp "C:/Server/worlds"
 ```
-### 生成功能
+```bash
+# NBT文件编辑器（使用自分支NBTExplorerCN）
+bex -editnbt -np "C:/Server/worlds/overworld/level.dat"
+```
+### 生成数据相关
 ```bash
 # 生成启动脚本（指定文档路径）
 bex -genbat -rq “paper1.20.1 核心，最大分配 4G，最小分配 2G。”
@@ -95,30 +121,63 @@ bex -genbat -rq “paper1.20.1 核心，最大分配 4G，最小分配 2G。”
 # 生成玩家热力图（指定文件夹路径）
 bex -hp -np "C:/Server/world/playerdata/"
 ```
+```bash
+# 生成处理后的服务器徽标
+bex -icon -pp "C:/Picture/vanilla-icon.png"
+bex -icon -pp "C:/Picture/vanilla-icon.png" -od "C:/Server"
+bex -icon -pp "C:/Picture/vanilla-icon.png" -od "C:/Server" -pn "custom-name.png"
+```
+### P2P联机相关
+```bash
+# P2P创建网络/加入网络/列出用户
+bex -p2p -cn -n "MyNetwork" -pw "MyPassword"  
+bex -p2p -jn -n "MyNetwork" -pw "MyPassword"  
+bex -p2p -l
+```
+### DLL注入器相关
+```bash
+# 注入DLL
+bex -injector -dp  
+bex -injector -dp "Latite.dll"  
+bex -injector -dp "Latite.dll" -ct "Example.exe"
+bex -injector -dp "Latite.dll" -ct "Example.exe" -tm 1m30s  
+```
+```bash
+# 立即注入上次注入的DLL（保存到配置文件）
+bex -injector -i
+```
+### 世界备份相关（生成的备份文件位于工作目录下的```BEX_Backups```文件夹）
+```bash
+# 定时备份与循环备份
+bex.exe -backup -bp "C:/Server" -sd "worlds/*" -bt 1h30m -le -mx 10
+bex.exe -backup -bp "C:/Server" -sd "worlds/*" -bt 1h30m -le
+bex.exe -backup -bp "C:/Server" -sd "worlds/nether" -bt 1h30m
+```
+```bash
+# 立即备份
+bex.exe -backup -bp "C:/Server" -sd "worlds/nether"
+```
 ### 杂项
-```bash
-# 检查版本
-bex -v
-```
-```bash
-# 程序更新
-bex -update
-```
 ```bash
 # 关于我们
 bex -about
 ```
-## 注意事项
-
+```bash
+# 取得帮助
+bex ?
+bex -help
+bex -MODULE_NAME ?
+```
+## 注意事项  
 1. 使用 RCON 功能时请确保在'''server.properties'''正确配置了以下内容：
 ```bash
 enable-rcon=true
 rcon.password=你的 RCON 连接密码
 rcon.port=你的 RCON 端口
 ```
-4. 如遇到任何问题，请提交 [issues](https://github.com/GongSunFangYun/BeaconEX/issues/new)
+2. 如遇到任何问题，请提交 [issues](https://github.com/GongSunFangYun/BeaconEX/issues/new)
 
-## Star History
+## 星标历史
 
 <a href="https://www.star-history.com/#GongSunFangYun/BeaconEX&Date">
  <picture>
