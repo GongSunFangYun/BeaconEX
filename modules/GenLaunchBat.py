@@ -11,8 +11,8 @@ from bexlib2.lg4pb import TextFormat, log_error, output, log_info
 # 上次还推送到仓库了吓死我了
 # 真正搞建议用pyenv传递环境变量，不要硬编码API-KEY！！！！！！！！！1
 DEFAULT_API_CONFIG = {
-    "api_key": "API-KEY",
-    "api_url": "API-URL",
+    "api_key": "###",
+    "api_url": "###",
     "model": "qwen-plus"
 }
 

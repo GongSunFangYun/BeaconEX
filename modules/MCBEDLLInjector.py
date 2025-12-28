@@ -15,12 +15,11 @@ from bexlib2.lg4pb import log_info, log_error, log_warn, TextFormat
 
 # 修改配置文件存储位置到 _internal 文件夹
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-INTERNAL_DIR = os.path.join(SCRIPT_DIR, "_internal")
-CONFIG_FILE_PATH = os.path.join(INTERNAL_DIR, "injector.config.json")
+CONFIG_FILE_PATH = os.path.join(SCRIPT_DIR, "injector.config.json")
 
 # 确保 _internal 目录存在
-if not os.path.exists(INTERNAL_DIR):
-    os.makedirs(INTERNAL_DIR, exist_ok=True)
+if not os.path.exists(SCRIPT_DIR):
+    os.makedirs(SCRIPT_DIR, exist_ok=True)
 
 class MBDLInjector:
     def __init__(self):

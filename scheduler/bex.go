@@ -28,10 +28,11 @@ const (
 )
 
 const (
-	UpdateCheckInterval = time.Hour                                                                          // 更新检查间隔
-	ReleaseURL          = "https://github.com/GongSunFangYun/BeaconEX/releases/latest"                       // 最新版本链接
-	VersionFileURL      = "https://github.com/GongSunFangYun/BeaconEX/releases/latest/download/version.json" // 版本信息文件链接
-	ProxyURL            = "https://gh-proxy.com/"                                                            // 代理站点
+	UpdateCheckInterval = 24 * time.Hour // 更新检查间隔改为24小时
+	ReleaseURL          = "https://github.com/GongSunFangYun/BeaconEX/releases/latest"
+	VersionFileURL      = "https://github.com/GongSunFangYun/BeaconEX/releases/latest/download/version.json"
+	ProxyURL            = "https://gh-proxy.com/"
+	CurrentVersion      = "2.0.1" // 硬编码版本号
 )
 
 // VersionInfo 版本信息结构体
@@ -39,6 +40,12 @@ type VersionInfo struct {
 	Version       string `json:"version"`
 	BuildDate     string `json:"build_date"`
 	RequireUpdate bool   `json:"require_update"`
+}
+
+// Config 配置结构体
+type Config struct {
+	LastCheckUpdate string `json:"last_check_update"` // 格式: YY-MM-DD HH:MM
+	DisableUpdate   bool   `json:"disable_update"`    // 是否禁用更新检查
 }
 
 // 模块映射表
@@ -162,10 +169,6 @@ func GetBaseDirectory() string {
 	return filepath.Dir(exePath)
 }
 
-type Config struct {
-	LastCheckUpdate string `json:"last_check_update"` // 格式: YY-MM-DD HH:MM
-}
-
 // GetConfigPath 获取配置文件路径
 func GetConfigPath() string {
 	baseDir := GetBaseDirectory()
@@ -180,6 +183,7 @@ func LoadConfig() *Config {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return &Config{
 			LastCheckUpdate: "00-01-01 00:00", // 默认值，确保会检查更新
+			DisableUpdate:   false,            // 默认不禁用更新
 		}
 	}
 
@@ -188,6 +192,7 @@ func LoadConfig() *Config {
 		LogError(fmt.Sprintf("读取配置文件失败: %v", err))
 		return &Config{
 			LastCheckUpdate: "00-01-01 00:00",
+			DisableUpdate:   false,
 		}
 	}
 
@@ -196,6 +201,7 @@ func LoadConfig() *Config {
 		LogError(fmt.Sprintf("解析配置文件失败: %v", err))
 		return &Config{
 			LastCheckUpdate: "00-01-01 00:00",
+			DisableUpdate:   false,
 		}
 	}
 
@@ -214,6 +220,11 @@ func SaveConfig(config *Config) error {
 
 // ShouldCheckUpdate 判断是否需要检查更新
 func ShouldCheckUpdate(config *Config) bool {
+	// 如果禁用了更新检查，直接返回false
+	if config.DisableUpdate {
+		return false
+	}
+
 	if config.LastCheckUpdate == "00-01-01 00:00" {
 		return true
 	}
@@ -224,6 +235,41 @@ func ShouldCheckUpdate(config *Config) bool {
 	}
 
 	return time.Since(lastCheck) >= UpdateCheckInterval
+}
+
+// compareVersions 比较版本号，返回:
+// -1: remoteVersion < currentVersion
+//
+//	0: remoteVersion == currentVersion
+//	1: remoteVersion > currentVersion
+func compareVersions(currentVersion, remoteVersion string) int {
+	// 简单的字符串比较，适用于语义化版本号
+	if remoteVersion == currentVersion {
+		return 0
+	}
+
+	// 分割版本号为数字部分
+	currentParts := strings.Split(currentVersion, ".")
+	remoteParts := strings.Split(remoteVersion, ".")
+
+	// 比较每个部分
+	for i := 0; i < len(currentParts) && i < len(remoteParts); i++ {
+		// 这里简化处理，实际可能需要将字符串转换为数字
+		if remoteParts[i] > currentParts[i] {
+			return 1
+		} else if remoteParts[i] < currentParts[i] {
+			return -1
+		}
+	}
+
+	// 如果前面部分都相等，长度更长的版本号更大
+	if len(remoteParts) > len(currentParts) {
+		return 1
+	} else if len(remoteParts) < len(currentParts) {
+		return -1
+	}
+
+	return 0
 }
 
 // CheckUpdate 检查更新
@@ -244,24 +290,30 @@ func CheckUpdate() {
 	// 通过代理下载远程 version.json
 	versionInfo, tempFilePath, err := downloadVersionInfo()
 	if err != nil {
-		return // 静默失败
+		// 静默失败，不打印错误信息
+		if tempFilePath != "" {
+			_ = os.Remove(tempFilePath)
+		}
+		return
 	}
 
 	// 检查完成后删除临时文件
 	defer func() {
 		if tempFilePath != "" {
-			err := os.Remove(tempFilePath)
-			if err != nil {
-				return
-			}
+			_ = os.Remove(tempFilePath)
 		}
 	}()
 
-	// 检查是否需要更新
-	if versionInfo.RequireUpdate {
-		LogInfo(fmt.Sprintf("%sBeaconEX v%s%s%s 已发布，请前往 %s%s%s 下载更新！%s",
-			ColorGreen, ColorBlue, versionInfo.Version, ColorBrightYellow,
-			ColorPurple, ReleaseURL, ColorBrightYellow, ColorClear))
+	// 比较版本号
+	versionComparison := compareVersions(CurrentVersion, versionInfo.Version)
+
+	if versionComparison == 1 {
+		// 远程版本更高，需要更新
+		LogInfo(fmt.Sprintf("%s发现新版本 %sv%s%s | %s当前版本 %sv%s%s",
+			ColorBrightYellow, ColorBlue, versionInfo.Version, ColorClear, ColorBrightYellow, ColorBlue, CurrentVersion, ColorClear))
+		LogInfo(fmt.Sprintf("%s请前往 %s%s%s 下载更新！%s",
+			ColorBrightYellow, ColorPurple, ReleaseURL, ColorBrightYellow, ColorClear))
+	} else if versionComparison == 0 {
 	}
 }
 
@@ -283,10 +335,7 @@ func downloadVersionInfo() (*VersionInfo, string, error) {
 		return nil, "", err
 	}
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-
-		}
+		_ = Body.Close()
 	}(resp.Body)
 
 	if resp.StatusCode != 200 {
@@ -299,19 +348,13 @@ func downloadVersionInfo() (*VersionInfo, string, error) {
 		return nil, "", err
 	}
 	defer func(tempFile *os.File) {
-		err := tempFile.Close()
-		if err != nil {
-
-		}
+		_ = tempFile.Close()
 	}(tempFile)
 
 	// 将响应内容写入临时文件
 	_, err = io.Copy(tempFile, resp.Body)
 	if err != nil {
-		err := os.Remove(tempFile.Name())
-		if err != nil {
-			return nil, "", err
-		} // 写入失败时删除临时文件
+		_ = os.Remove(tempFile.Name()) // 写入失败时删除临时文件
 		return nil, "", err
 	}
 
@@ -319,19 +362,13 @@ func downloadVersionInfo() (*VersionInfo, string, error) {
 	tempFilePath := tempFile.Name()
 	data, err := ioutil.ReadFile(tempFilePath)
 	if err != nil {
-		err := os.Remove(tempFilePath)
-		if err != nil {
-			return nil, "", err
-		}
+		_ = os.Remove(tempFilePath)
 		return nil, "", err
 	}
 
 	var versionInfo VersionInfo
 	if err := json.Unmarshal(data, &versionInfo); err != nil {
-		err := os.Remove(tempFilePath)
-		if err != nil {
-			return nil, "", err
-		}
+		_ = os.Remove(tempFilePath)
 		return nil, "", err
 	}
 
@@ -339,6 +376,7 @@ func downloadVersionInfo() (*VersionInfo, string, error) {
 }
 
 func main() {
+	// 检查更新
 	CheckUpdate()
 
 	// 先检查是否有帮助查询请求
@@ -564,6 +602,7 @@ func showAbout() { // 显示帮助信息[已进行美化(看着顺眼)]
   │    %sBeaconEX%s || %s强大的Minecraft工具箱%s    %s│
 %s  └─────────────────────────────────────────┘
 %s  • 软件名称: BeaconEX
+  • 版本: v%s
   • 开发者: GongSunFangYun [https://github.com/GongSunFangYun]
   • 项目地址: https://github.com/GongSunFangYun/BeaconEX
   • 反馈邮箱: misakifeedback@outlook.com
@@ -579,7 +618,8 @@ func showAbout() { // 显示帮助信息[已进行美化(看着顺眼)]
 		ColorCyan,
 		ColorGreen, ColorCyan, ColorBlue, ColorClear, ColorCyan,
 		ColorCyan,
-		ColorBrightYellow, ColorRed,
+		ColorBrightYellow, CurrentVersion,
+		ColorRed,
 		ColorClear)
 
 	// 添加空行并在两侧添加空格实现居中悬空效果
@@ -611,6 +651,7 @@ func showHelp() {
 	// 调度器参数部分
 
 	helpBuilder.WriteString(ColorBlue)
+	helpBuilder.WriteString(fmt.Sprintf("*当前版本: v%s\n", CurrentVersion))
 	helpBuilder.WriteString("*调度器参数用于指定模块，模块参数必须在调度器参数之后使用\n")
 	helpBuilder.WriteString("*每个模块均有对应的处理参数，因此模块与模块间参数大多不可混用\n")
 	helpBuilder.WriteString(ColorCyan + "[调度器参数]" + ColorPurple + " ? " + ColorBlue + "可以显示该模块帮助信息\n")

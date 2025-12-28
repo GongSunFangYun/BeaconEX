@@ -1,0 +1,60 @@
+{
+  "RT_GROUP_ICON": {
+    "APP": {
+      "0000": [
+        "ICON.png"
+      ]
+    }
+  },
+  "RT_MANIFEST": {
+    "#1": {
+      "0409": {
+        "identity": {
+          "name": "",
+          "version": ""
+        },
+        "description": "",
+        "minimum-os": "win7",
+        "execution-level": "as invoker",
+        "ui-access": false,
+        "auto-elevate": false,
+        "dpi-awareness": "system",
+        "disable-theming": false,
+        "disable-window-filtering": false,
+        "high-resolution-scrolling-aware": false,
+        "ultra-high-resolution-scrolling-aware": false,
+        "long-path-aware": false,
+        "printer-driver-isolation": false,
+        "gdi-scaling": false,
+        "segment-heap": true,
+        "use-common-controls-v6": false
+      }
+    }
+  },
+  "RT_VERSION": {
+    "#1": {
+      "0000": {
+        "fixed": {
+          "file_version": "0.0.0.0",
+          "product_version": "2.0.1"
+        },
+        "info": {
+          "0804": {
+            "Comments": "This is BeaconEX Scheduler",
+            "CompanyName": "GongSunFangYun",
+            "FileDescription": "BeaconEX Scheduler",
+            "FileVersion": "0.0.0.0",
+            "InternalName": "bex.exe",
+            "LegalCopyright": "Copyright © 2024-2025 GongSunFangYun. All rights reserved.",
+            "LegalTrademarks": "",
+            "OriginalFilename": "bex.exe",
+            "PrivateBuild": "",
+            "ProductName": "BeaconEX Scheduler",
+            "ProductVersion": "2.0.1",
+            "SpecialBuild": ""
+          }
+        }
+      }
+    }
+  }
+}
