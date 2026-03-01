@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	defaultAPIKey = "X"
-	defaultAPIURL = "X"
-	defaultModel  = "X"
+	defaultAPIKey = "sk-76bbbc6fbfb8415c8b96f7aceb7ac512"
+	defaultAPIURL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+	defaultModel  = "qwen-plus"
 )
 
 func LaunchBat(
