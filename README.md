@@ -354,7 +354,7 @@ BeaconEX 会在程序所在目录自动生成 `config.json` 配置文件：
 
 ```json
 {
-  "last_check_update": "24-01-01 12:00",
+  "last_check_update": "26-03-01 12:00",
   "disable_update": false
 }
 ```
