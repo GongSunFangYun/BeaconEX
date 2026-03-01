@@ -13,7 +13,6 @@
 ![简体中文支持](https://img.shields.io/badge/简体中文-支持-ff8c00?style=flat-square&labelColor=ff8c00&color=ffd700)
 
 </div>
-# BeaconEX - Minecraft 服务器工具箱
 
 ## 项目简介
 
