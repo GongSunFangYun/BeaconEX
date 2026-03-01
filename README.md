@@ -115,7 +115,6 @@ chmod +x build.sh
 | `bex_linux_arm64` | Linux | ARM64 (如树莓派) |
 | `bex_darwin_amd64` | macOS | Intel 芯片 |
 | `bex_darwin_arm64` | macOS | Apple Silicon (M1/M2/M3) |
-| `checksums.txt` | - | 文件校验和 |
 
 ## 手动编译（可选）
 
