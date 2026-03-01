@@ -172,8 +172,8 @@ bex <模块> ?          查看模块详细帮助
 | script | s | 生成服务器启动脚本 |
 | heatmap | h | 玩家游玩时长热力图 |
 | world | w | 世界文件分析 |
-| injectdll | i | DLL 注入（仅 Windows） |
-| icon | ic | 生成服务器图标 |
+| dll | d | DLL 注入（仅 Windows） |
+| icon | i | 生成服务器图标 |
 | backup | b | 世界文件备份 |
 | about | ! | 关于 BeaconEX |
 | help | ? | 显示帮助信息 |
