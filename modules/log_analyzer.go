@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	logAPIKey = "sk-76bbbc6fbfb8415c8b96f7aceb7ac512"
-	logAPIURL = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-	logModel  = "qwen-plus"
+	logAPIKey = ""
+	logAPIURL = ""
+	logModel  = ""
 )
 
 func LogAnalyzer(
