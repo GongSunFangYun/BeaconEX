@@ -103,7 +103,6 @@ func (d *DLLInjectorInstance) InjectDLL(processName string, dllPath string) bool
 	utils.LogInfo("开始进行 DLL 注入：")
 	utils.LogInfo("目标进程: %s | DLL文件: %s", processName, dllPath)
 
-	// 步骤 1: 查找目标进程
 	pid, err := d.findProcessByName(processName)
 	if err != nil {
 		utils.LogError("%s[1/9]%s %s",
@@ -372,7 +371,6 @@ func (d *DLLInjectorInstance) waitForSingleObject(handle uintptr, timeoutMs uint
 	kernel32 := syscall.NewLazyDLL("kernel32.dll")
 	procWaitForSingleObject := kernel32.NewProc("WaitForSingleObject")
 
-	// WAIT_OBJECT_0 = 0
 	ret, _, _ := procWaitForSingleObject.Call(handle, uintptr(timeoutMs))
 
 	if ret != 0 {
@@ -396,7 +394,6 @@ func (d *DLLInjectorInstance) getExitCodeThread(handle uintptr) (uintptr, error)
 		return 0, fmt.Errorf("GetExitCodeThread 失败: %v", lastErr)
 	}
 
-	// STILL_ACTIVE = 259
 	if exitCode == 259 {
 		return 0, fmt.Errorf("线程仍在运行")
 	}
@@ -509,7 +506,7 @@ func (d *DLLInjectorInstance) saveConfig(dllPath string) error {
 		return err
 	}
 
-	utils.LogInfo("已保存 DLL 路径到配置文件，后续注入可以直接使用\"bex injectdll -i\"快速注入")
+	utils.LogInfo("已保存 DLL 路径到配置文件，后续注入可以直接使用\"bex dll -i\"快速注入")
 	return nil
 }
 

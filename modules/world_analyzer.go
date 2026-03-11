@@ -265,7 +265,6 @@ func (w *WorldScannerInstance) outputStatistics() {
 	utils.LogInfo("玩家数据: %d 个", totalPlayers)
 	utils.LogInfo("数据包: %d 个", totalDataPacks)
 
-	// 维度统计
 	dimStats := make(map[string]int)
 	for _, info := range w.Worlds {
 		dimStats[info.Dimension]++

@@ -35,7 +35,6 @@ type PingServerInstance struct {
 }
 
 func (p *PingServerInstance) Execute() {
-	// 验证参数
 	if !p.validateArgs() {
 		return
 	}
@@ -68,6 +67,61 @@ func (p *PingServerInstance) validateArgs() bool {
 	return true
 }
 
+func pingOnce(host string, seq int, timeout time.Duration) (latency time.Duration, method string, err error) {
+	ip, resolveErr := net.ResolveIPAddr("ip", host)
+	if resolveErr != nil {
+		return 0, "", resolveErr
+	}
+
+	conn, icmpErr := net.DialIP("ip4:icmp", nil, ip)
+	if icmpErr == nil {
+		msg := make([]byte, 40)
+		msg[0] = 8
+		msg[1] = 0
+		msg[4] = byte(seq >> 8)
+		msg[5] = byte(seq)
+		checksum := computeChecksum(msg)
+		msg[2] = byte(checksum >> 8)
+		msg[3] = byte(checksum)
+
+		start := time.Now()
+		_, writeErr := conn.Write(msg)
+		if writeErr != nil {
+			_ = conn.Close()
+			return 0, "icmp", writeErr
+		}
+
+		reply := make([]byte, 1024)
+		_ = conn.SetReadDeadline(time.Now().Add(timeout))
+		_, _, readErr := conn.ReadFrom(reply)
+		elapsed := time.Since(start)
+		_ = conn.Close()
+
+		if readErr != nil {
+			return 0, "icmp", readErr
+		}
+		return elapsed, "icmp", nil
+	}
+
+	start := time.Now()
+	tcpConn, tcpErr := net.DialTimeout("tcp", fmt.Sprintf("%s:443", host), timeout)
+	elapsed := time.Since(start)
+	if tcpErr == nil {
+		_ = tcpConn.Close()
+		return elapsed, "tcp", nil
+	}
+
+	start = time.Now()
+	tcpConn, tcpErr = net.DialTimeout("tcp", fmt.Sprintf("%s:80", host), timeout)
+	elapsed = time.Since(start)
+	if tcpErr == nil {
+		_ = tcpConn.Close()
+		return elapsed, "tcp", nil
+	}
+
+	return 0, "tcp", fmt.Errorf("ICMP 需要 root 权限，TCP 降级也失败 (443/80 均不可达)")
+}
+
 func (p *PingServerInstance) singlePing() {
 	host := extractHost(p.Target)
 	ip, err := net.ResolveIPAddr("ip", host)
@@ -78,53 +132,24 @@ func (p *PingServerInstance) singlePing() {
 
 	utils.LogInfo("正在 Ping %s [%s] 具有 32 字节的数据:", host, ip.String())
 
+	timeout := time.Duration(p.Interval * 2 * float64(time.Second))
+
 	var successCount int
 	var totalLatency time.Duration
 	var minLatency, maxLatency time.Duration
 	var minInitialized bool
-	timeout := time.Duration(p.Interval * 2 * float64(time.Second))
+	var shownMethodNote bool
 
 	for i := 1; i <= p.Count; i++ {
-		conn, err := net.DialIP("ip4:icmp", nil, ip)
-		if err != nil {
-			utils.LogWarn("[%d/%d] 正在 Ping %s: %s×%s 创建连接失败",
-				i, p.Count, host, utils.ColorRed, utils.ColorClear)
-			if i < p.Count {
-				time.Sleep(time.Duration(p.Interval * float64(time.Second)))
-			}
-			continue
+		latency, method, err := pingOnce(host, i, timeout)
+
+		if !shownMethodNote && method == "tcp" {
+			utils.LogWarn("ICMP 不可用（需要 root/管理员权限），已自动切换到 TCP 延迟测量模式")
+			shownMethodNote = true
 		}
 
-		// 构建 ICMP Echo 请求
-		msg := make([]byte, 40)
-		msg[0] = 8 // Echo Request
-		msg[1] = 0
-		msg[4] = byte(i >> 8)
-		msg[5] = byte(i)
-		checksum := computeChecksum(msg)
-		msg[2] = byte(checksum >> 8)
-		msg[3] = byte(checksum)
-
-		start := time.Now()
-		_, err = conn.Write(msg)
 		if err != nil {
-			_ = conn.Close()
-			utils.LogWarn("[%d/%d] 正在 Ping %s: %s×%s 发送失败",
-				i, p.Count, host, utils.ColorRed, utils.ColorClear)
-			if i < p.Count {
-				time.Sleep(time.Duration(p.Interval * float64(time.Second)))
-			}
-			continue
-		}
-
-		reply := make([]byte, 1024)
-		_ = conn.SetReadDeadline(time.Now().Add(timeout))
-		_, _, readErr := conn.ReadFrom(reply)
-		latency := time.Since(start)
-		_ = conn.Close()
-
-		if readErr != nil {
-			utils.LogWarn("[%d/%d] 正在 Ping %s: %s×%s 响应超时",
+			utils.LogWarn("[%d/%d] 正在 Ping %s: %s无响应%s",
 				i, p.Count, host, utils.ColorRed, utils.ColorClear)
 		} else {
 			successCount++
@@ -173,8 +198,7 @@ func (p *PingServerInstance) loopPing() {
 		return
 	}
 
-	utils.LogInfo("正在 Ping %s [%s] 具有 32 字节的数据:",
-		host, ip.String())
+	utils.LogInfo("正在 Ping %s [%s] 具有 32 字节的数据:", host, ip.String())
 
 	var successCount, totalCount int
 	var totalLatency time.Duration
@@ -182,6 +206,7 @@ func (p *PingServerInstance) loopPing() {
 	var minInitialized bool
 	var lastLatency time.Duration
 	var consecutiveTimeouts int
+	var shownMethodNote bool
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -196,63 +221,25 @@ func (p *PingServerInstance) loopPing() {
 
 		case <-ticker.C:
 			totalCount++
-			sequence := totalCount
 
-			startTime := time.Now()
+			latency, method, err := pingOnce(host, totalCount, 2*time.Second)
 
-			conn, err := net.DialIP("ip4:icmp", nil, ip)
-			if err != nil {
-				utils.LogWarn("[%d] 创建连接失败: %s", sequence, err)
-				consecutiveTimeouts++
-				continue
-			}
-
-			msg := make([]byte, 32+8)
-			msg[0] = 8
-			msg[1] = 0
-			msg[4] = byte(sequence >> 8)
-			msg[5] = byte(sequence)
-			msg[6] = 0
-			msg[7] = 0
-
-			checksum := computeChecksum(msg)
-			msg[2] = byte(checksum >> 8)
-			msg[3] = byte(checksum)
-
-			_, err = conn.Write(msg)
-			if err != nil {
-				err := conn.Close()
-				if err != nil {
-					return
-				}
-				utils.LogWarn("[%d] 发送失败: %s", sequence, err)
-				consecutiveTimeouts++
-				continue
-			}
-
-			reply := make([]byte, 1024)
-			err = conn.SetReadDeadline(time.Now().Add(2 * time.Second))
-			if err != nil {
-				return
-			}
-			_, _, err = conn.ReadFrom(reply)
-			err = conn.Close()
-			if err != nil {
-				return
+			if !shownMethodNote && method == "tcp" {
+				utils.LogWarn("ICMP 不可用（需要 root/管理员权限），已自动切换到 TCP 延迟测量模式")
+				shownMethodNote = true
 			}
 
 			if err != nil {
 				consecutiveTimeouts++
 				lossRate := float64(totalCount-successCount) / float64(totalCount) * 100
-				utils.LogWarn("[%d] %s×%s 响应超时 | 连续超时: %s%d次%s | 丢包率 %s%.1f%%%s",
-					sequence,
+				utils.LogWarn("[%d] %s无响应%s | 连续超时: %s%d次%s | 丢包率 %s%.1f%%%s",
+					totalCount,
 					utils.ColorRed, utils.ColorClear,
 					utils.ColorYellow, consecutiveTimeouts, utils.ColorClear,
 					utils.ColorRed, lossRate, utils.ColorClear)
 				continue
 			}
 
-			latency := time.Since(startTime)
 			successCount++
 			totalLatency += latency
 
@@ -269,12 +256,11 @@ func (p *PingServerInstance) loopPing() {
 			consecutiveTimeouts = 0
 
 			jitterStr := formatJitter(jitter)
-
 			avgLatency := totalLatency / time.Duration(successCount)
 			lossRate := float64(totalCount-successCount) / float64(totalCount) * 100
 
 			utils.LogInfo("[%d] 延迟: %s%.2fms%s | 抖动: %s | 平均: %s%.2fms%s | 丢包率 %s%.1f%%%s",
-				sequence,
+				totalCount,
 				utils.ColorGreen, float64(latency)/float64(time.Millisecond), utils.ColorClear,
 				jitterStr,
 				utils.ColorBlue, float64(avgLatency)/float64(time.Millisecond), utils.ColorClear,
@@ -285,20 +271,16 @@ func (p *PingServerInstance) loopPing() {
 showStats:
 	if totalCount > 0 {
 		lossRate := float64(totalCount-successCount) / float64(totalCount) * 100
-		avgLatency := totalLatency / time.Duration(successCount)
-
 		utils.LogInfo("已结束持续 Ping 测试，结果统计如下：")
-		utils.LogInfo("总测试次数: %s%d%s",
-			utils.ColorYellow, totalCount, utils.ColorClear)
-		utils.LogInfo("成功响应: %s%d%s 次",
-			utils.ColorGreen, successCount, utils.ColorClear)
-		utils.LogInfo("丢包率: %s%.2f%%%s",
-			utils.ColorRed, lossRate, utils.ColorClear)
+		utils.LogInfo("总测试次数: %s%d%s", utils.ColorYellow, totalCount, utils.ColorClear)
+		utils.LogInfo("成功响应: %s%d%s 次", utils.ColorGreen, successCount, utils.ColorClear)
+		utils.LogInfo("丢包率: %s%.2f%%%s", utils.ColorRed, lossRate, utils.ColorClear)
 
 		if successCount > 0 {
 			if !minInitialized {
 				minLatency = 0
 			}
+			avgLatency := totalLatency / time.Duration(successCount)
 			utils.LogInfo("最小延迟: %s%.2fms%s",
 				utils.ColorGreen, float64(minLatency)/float64(time.Millisecond), utils.ColorClear)
 			utils.LogInfo("最大延迟: %s%.2fms%s",
@@ -326,14 +308,11 @@ func computeChecksum(data []byte) uint16 {
 func formatJitter(jitter time.Duration) string {
 	jitterMs := float64(jitter) / float64(time.Millisecond)
 	if jitter > 0 {
-		return fmt.Sprintf("%s+%.2fms%s",
-			utils.ColorRed, jitterMs, utils.ColorClear)
+		return fmt.Sprintf("%s+%.2fms%s", utils.ColorRed, jitterMs, utils.ColorClear)
 	} else if jitter < 0 {
-		return fmt.Sprintf("%s%.2fms%s",
-			utils.ColorGreen, jitterMs, utils.ColorClear)
+		return fmt.Sprintf("%s%.2fms%s", utils.ColorGreen, jitterMs, utils.ColorClear)
 	}
-	return fmt.Sprintf("%s±0ms%s",
-		utils.ColorPurple, utils.ColorClear)
+	return fmt.Sprintf("%s+/-0ms%s", utils.ColorPurple, utils.ColorClear)
 }
 
 func extractHost(target string) string {

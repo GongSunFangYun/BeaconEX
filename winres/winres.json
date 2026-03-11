@@ -36,7 +36,7 @@
       "0000": {
         "fixed": {
           "file_version": "0.0.0.0",
-          "product_version": "2.0.1"
+          "product_version": "3.0.1"
         },
         "info": {
           "0804": {
@@ -45,12 +45,12 @@
             "FileDescription": "BeaconEX",
             "FileVersion": "0.0.0.0",
             "InternalName": "bex.exe",
-            "LegalCopyright": "Copyright © 2024-2025 GongSunFangYun. All rights reserved.",
+            "LegalCopyright": "Copyright © 2024-2026 GongSunFangYun. All rights reserved.",
             "LegalTrademarks": "",
             "OriginalFilename": "bex.exe",
             "PrivateBuild": "",
             "ProductName": "BeaconEX",
-            "ProductVersion": "3.0.0",
+            "ProductVersion": "3.0.1",
             "SpecialBuild": ""
           }
         }

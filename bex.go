@@ -1,6 +1,5 @@
-// 新版本bex.go，版本3.0.0
-
 //go:generate goversioninfo
+
 package main
 
 import (
@@ -26,14 +25,12 @@ const (
 	CurrentVersion      = "3.0.0"
 )
 
-// VersionInfo 版本信息结构体
 type VersionInfo struct {
 	Version       string `json:"version"`
 	BuildDate     string `json:"build_date"`
 	RequireUpdate bool   `json:"require_update"`
 }
 
-// Config 配置结构体
 type Config struct {
 	LastCheckUpdate string `json:"last_check_update"`
 	DisableUpdate   bool   `json:"disable_update"`
@@ -42,20 +39,17 @@ type Config struct {
 func main() {
 	CheckUpdate()
 
-	// 如果没有参数，显示帮助并等待按键
 	if len(os.Args) < 2 {
 		showGeneralHelp()
 		waitForKey()
 		return
 	}
 
-	// 处理帮助请求
 	if handleHelpRequest() {
 		waitForKey()
 		return
 	}
 
-	// 解析主命令
 	cmd := os.Args[1]
 	args := os.Args[2:]
 
@@ -70,21 +64,23 @@ func main() {
 		handleLog(args)
 	case "nbt", "n":
 		handleNBT(args)
-	case "script", "s": // 修改：serbat/sb -> script/s
+	case "editnbt", "e":
+		handleEditNBT(args)
+	case "script", "s":
 		handleLaunchBat(args)
-	case "heatmap", "h": // 修改：heatmap/hm -> heatmap/h
+	case "heatmap", "h":
 		handleHeatMap(args)
 	case "world", "w":
 		handleWorld(args)
-	case "injectdll", "i":
+	case "dll", "d":
 		handleDLLInjector(args)
-	case "icon", "ic":
+	case "icon", "i":
 		handleMakeIcon(args)
 	case "backup", "b":
 		handleBackup(args)
-	case "about", "!": // 修改：about/a -> about/!
+	case "about", "!":
 		showAbout()
-	case "help", "?": // 修改：help/h -> help/?
+	case "help", "?":
 		showGeneralHelp()
 	default:
 		utils.LogError("未知命令: %s", cmd)
@@ -106,7 +102,6 @@ func handleHelpRequest() bool {
 		}
 	}
 
-	// 检查是否有 help 子命令
 	if len(os.Args) >= 3 && os.Args[2] == "help" {
 		showModuleHelp(os.Args[1])
 		return true
@@ -115,7 +110,6 @@ func handleHelpRequest() bool {
 	return false
 }
 
-// waitForKey 等待用户按键
 func waitForKey() {
 	fmt.Print("\n按任意键继续...")
 	var b [1]byte
@@ -125,9 +119,6 @@ func waitForKey() {
 	}
 }
 
-// ==================== 参数解析辅助函数 ====================
-
-// parseKeyValue 解析键值对参数 (-key value)
 func parseKeyValue(args []string) map[string]string {
 	result := make(map[string]string)
 	for i := 0; i < len(args); i++ {
@@ -145,7 +136,6 @@ func parseKeyValue(args []string) map[string]string {
 	return result
 }
 
-// parseInt 解析整数，失败返回默认值
 func parseInt(s string, defaultVal int) int {
 	val, err := strconv.Atoi(s)
 	if err != nil {
@@ -154,7 +144,6 @@ func parseInt(s string, defaultVal int) int {
 	return val
 }
 
-// parseFloat 解析浮点数，失败返回默认值
 func parseFloat(s string, defaultVal float64) float64 {
 	val, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -163,7 +152,6 @@ func parseFloat(s string, defaultVal float64) float64 {
 	return val
 }
 
-// 服务器查询模块 - 自动识别版本
 func handleQuery(args []string) {
 	if len(args) == 0 {
 		utils.LogError("查询模块缺少目标地址")
@@ -172,22 +160,17 @@ func handleQuery(args []string) {
 		return
 	}
 
-	// 第一个参数是目标地址
 	target := args[0]
 
-	// 检查是否有帮助请求
 	if len(args) > 1 && args[1] == "?" {
 		showModuleHelp("query")
 		waitForKey()
 		return
 	}
 
-	// 调用自动识别版本的查询函数
-	// 传入 false, false 触发自动识别模式
 	modules.QueryServer(false, false, target)
 }
 
-// Ping测试模块
 func handlePing(args []string) {
 	if len(args) == 0 {
 		utils.LogError("Ping模块缺少目标地址")
@@ -195,10 +178,8 @@ func handlePing(args []string) {
 		return
 	}
 
-	// 第一个参数是目标地址
 	target := args[0]
 
-	// 解析可选参数
 	count := 4
 	interval := 1.0
 	repeat := false
@@ -226,7 +207,6 @@ func handlePing(args []string) {
 	modules.PingServer(target, count, interval, repeat)
 }
 
-// RCON远程控制模块
 func handleRCON(args []string) {
 	if len(args) == 0 {
 		utils.LogError("RCON模块缺少参数")
@@ -234,19 +214,16 @@ func handleRCON(args []string) {
 		return
 	}
 
-	// 检查是否是帮助请求
 	if args[0] == "?" {
 		showModuleHelp("rcon")
 		return
 	}
 
-	// 第一个参数是登录字符串
 	loginStr := args[0]
 
 	modules.RconExecutorEntry(loginStr)
 }
 
-// 日志分析模块
 func handleLog(args []string) {
 	if len(args) == 0 {
 		utils.LogError("日志分析模块缺少文件路径")
@@ -262,7 +239,6 @@ func handleLog(args []string) {
 	modules.LogAnalyzer(args[0])
 }
 
-// NBT处理模块（整合分析器和编辑器）
 func handleNBT(args []string) {
 	if len(args) == 0 {
 		utils.LogError("NBT模块缺少文件路径")
@@ -275,29 +251,33 @@ func handleNBT(args []string) {
 		return
 	}
 
-	filePath := args[0]
-	editMode := false
-
-	// 检查是否有编辑模式标志
-	for i := 1; i < len(args); i++ {
-		if args[i] == "-e" || args[i] == "--edit" {
-			editMode = true
-		}
-	}
-
-	modules.NBTProcessor(filePath, editMode)
+	modules.NBTProcessor(args[0])
 }
 
-// 启动脚本生成模块
-func handleLaunchBat(args []string) {
+func handleEditNBT(args []string) {
 	if len(args) == 0 {
-		utils.LogError("启动脚本生成模块缺少要求")
-		showModuleHelp("script") // 修改：serbat -> script
+		utils.LogError("NBT编辑器模块缺少文件路径")
+		showModuleHelp("editnbt")
 		return
 	}
 
 	if args[0] == "?" {
-		showModuleHelp("script") // 修改：serbat -> script
+		showModuleHelp("editnbt")
+		return
+	}
+
+	modules.NBTEditor(args[0])
+}
+
+func handleLaunchBat(args []string) {
+	if len(args) == 0 {
+		utils.LogError("启动脚本生成模块缺少要求")
+		showModuleHelp("script")
+		return
+	}
+
+	if args[0] == "?" {
+		showModuleHelp("script")
 		return
 	}
 
@@ -312,7 +292,6 @@ func handleLaunchBat(args []string) {
 	modules.LaunchBat(request, outputDir)
 }
 
-// 热力图生成模块
 func handleHeatMap(args []string) {
 	if len(args) == 0 {
 		utils.LogError("热力图模块缺少playerdata路径")
@@ -336,7 +315,6 @@ func handleHeatMap(args []string) {
 	modules.HeatMap(dataFolder, outputDir)
 }
 
-// 世界分析模块
 func handleWorld(args []string) {
 	if len(args) == 0 {
 		utils.LogError("世界分析模块缺少世界路径")
@@ -352,16 +330,15 @@ func handleWorld(args []string) {
 	modules.WorldAnalyzer(args[0])
 }
 
-// DLL注入模块
 func handleDLLInjector(args []string) {
 	if len(args) == 0 {
 		utils.LogError("DLL注入模块缺少参数")
-		showModuleHelp("injectdll")
+		showModuleHelp("dll")
 		return
 	}
 
 	if args[0] == "?" {
-		showModuleHelp("injectdll")
+		showModuleHelp("dll")
 		return
 	}
 
@@ -384,11 +361,10 @@ func handleDLLInjector(args []string) {
 		modules.DLLInjector(dllPath, processName, taskTime, false, false)
 	} else {
 		utils.LogError("DLL注入参数不完整/配置文件不存在")
-		showModuleHelp("injectdll")
+		showModuleHelp("dll")
 	}
 }
 
-// 图标生成模块
 func handleMakeIcon(args []string) {
 	if len(args) == 0 {
 		utils.LogError("图标生成模块缺少图片路径")
@@ -416,7 +392,6 @@ func handleMakeIcon(args []string) {
 	modules.MakeIcon(picturePath, outputDir, pictureName)
 }
 
-// 世界备份模块
 func handleBackup(args []string) {
 	if len(args) == 0 {
 		utils.LogError("世界备份模块缺少参数")
@@ -481,52 +456,53 @@ func showGeneralHelp() {
 	b.WriteString("用法:\n")
 	b.WriteString(utils.ColorClear)
 	b.WriteString("  bex <模块> [参数...]\n")
-	b.WriteString("  bex <模块> ?          查看模块详细帮助\n\n")
+	b.WriteString("  bex <模块> ?          查看模块详细用法\n\n")
 
 	b.WriteString(utils.ColorYellow)
-	b.WriteString("  本程序为命令行工具，请勿双击运行！\n")
-	b.WriteString("  请在 PowerShell / CMD / Terminal / Shell 中运行本程序！\n\n")
+	b.WriteString("  提示：本工具为命令行程序，请在终端中运行\n")
 	b.WriteString(utils.ColorClear)
+	b.WriteString("\n")
 
 	b.WriteString(utils.ColorGreen)
 	b.WriteString("可用模块:\n")
 	b.WriteString(utils.ColorClear)
-	b.WriteString("  query,    q   查询服务器状态（自动识别 Java / 基岩版）\n")
-	b.WriteString("  ping,     p   网络连通性测试\n")
-	b.WriteString("  rcon,     r   RCON 远程控制\n")
-	b.WriteString("  log,      l   服务器日志分析\n")
-	b.WriteString("  nbt,      n   NBT 文件查看 / 编辑\n")
+	b.WriteString("  query,    q   查询服务器状态（自动识别 Java/基岩版）\n")
+	b.WriteString("  ping,     p   测试服务器网络延迟\n")
+	b.WriteString("  rcon,     r   远程执行控制台命令\n")
+	b.WriteString("  log,      l   分析日志文件并定位错误\n")
+	b.WriteString("  nbt,      n   查看 NBT 文件内容\n")
+	b.WriteString("  editnbt,  e   交互式 NBT 文件编辑器\n")
 	b.WriteString("  script,   s   生成服务器启动脚本\n")
-	b.WriteString("  heatmap,  h   玩家游玩时长热力图\n")
-	b.WriteString("  world,    w   世界文件分析\n")
-	b.WriteString("  injectdll, i   DLL 注入（仅 Windows）\n")
-	b.WriteString("  icon,     ic  生成服务器图标\n")
-	b.WriteString("  backup,   b   世界文件备份\n")
+	b.WriteString("  heatmap,  h   基于玩家活跃度生成热力图\n")
+	b.WriteString("  world,    w   扫描并分析世界文件\n")
+	b.WriteString("  dll,      d   DLL 注入工具（仅 Windows）\n")
+	b.WriteString("  icon,     i   生成服务器图标\n")
+	b.WriteString("  backup,   b   自动备份世界文件\n")
 	b.WriteString("  about,    !   关于 BeaconEX\n")
-	b.WriteString("  help,     ?   显示此帮助\n")
+	b.WriteString("  help,     ?   显示本帮助\n")
 
 	fmt.Print(b.String())
 }
 
-// 模块帮助内容（使用helpBuilder风格）
 var moduleHelps = map[string]string{
 	"query": func() string {
 		var b strings.Builder
 		b.WriteString(utils.ColorCyan)
 		b.WriteString("查询模块  query / q\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("自动识别 Java / 基岩版并查询服务器状态\n\n")
+		b.WriteString("自动检测服务器版本类型并查询状态信息\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("示例:\n")
 		b.WriteString(utils.ColorClear)
 		b.WriteString("  bex query mc.hypixel.net\n")
 		b.WriteString("  bex query play.cubecraft.net:19132\n")
 		b.WriteString("  bex q 127.0.0.1:11451\n\n")
-		b.WriteString(utils.ColorYellow)
+		b.WriteString(utils.ColorGreen)
 		b.WriteString("说明:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  查询操作会同时尝试RakNet和TCP协议，哪个先响应就返回哪个结果\n")
-		b.WriteString("  不指定端口时，Java 默认 25565，基岩版默认 19132\n")
+		b.WriteString("  • 同时通过 RakNet（基岩版）和 TCP（Java版）协议查询\n")
+		b.WriteString("  • 以最先响应的协议为准返回结果\n")
+		b.WriteString("  • 未指定端口时，Java版默认 25565，基岩版默认 19132\n")
 		return b.String()
 	}(),
 
@@ -535,7 +511,7 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorCyan)
 		b.WriteString("Ping 测试模块  ping / p\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("对目标主机执行网络连通性测试。\n\n")
+		b.WriteString("测试目标服务器的网络连通性和响应延迟\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("示例:\n")
 		b.WriteString(utils.ColorClear)
@@ -545,13 +521,14 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("参数:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  -f <次数>   Ping 次数（默认 4）\n")
-		b.WriteString("  -v <秒>     Ping 间隔，单位秒（默认 1.0）\n")
-		b.WriteString("  -r           持续 Ping 模式\n\n")
-		b.WriteString(utils.ColorYellow)
+		b.WriteString("  -f <次数>   发送的 ping 包数量（默认 4）\n")
+		b.WriteString("  -v <秒>     ping 包发送间隔（默认 1.0）\n")
+		b.WriteString("  -r          持续 ping 模式（Ctrl+C 退出）\n\n")
+		b.WriteString(utils.ColorGreen)
 		b.WriteString("说明:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  目标只需主机名，无需端口\n")
+		b.WriteString("  • 目标地址无需指定端口\n")
+		b.WriteString("  • 支持域名和 IP 地址\n")
 		return b.String()
 	}(),
 
@@ -560,7 +537,7 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorCyan)
 		b.WriteString("RCON 远程控制模块  rcon / r\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("通过 RCON 协议远程执行服务器指令\n\n")
+		b.WriteString("通过 RCON 协议远程执行服务器命令\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
@@ -570,11 +547,13 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorClear)
 		b.WriteString("  bex rcon server@127.0.0.1           # 默认端口 25575\n")
 		b.WriteString("  bex rcon server@127.0.0.1:25575     # 指定端口\n\n")
-		b.WriteString(utils.ColorYellow)
+		b.WriteString(utils.ColorGreen)
 		b.WriteString("说明:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  用户名固定为 server，连接后输入密码进入 RCON Shell\n")
-		b.WriteString("  输入 exit 或 quit 断开连接，Ctrl+C 强制退出\n")
+		b.WriteString("  • 用户名固定为 server\n")
+		b.WriteString("  • 连接成功后进入交互式命令行\n")
+		b.WriteString("  • 输入 exit 或 quit 退出连接\n")
+		b.WriteString("  • 使用 Ctrl+C 强制断开\n")
 		return b.String()
 	}(),
 
@@ -583,7 +562,7 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorCyan)
 		b.WriteString("日志分析模块  log / l\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("解析服务器日志，提取错误并给出 AI 分析建议。\n\n")
+		b.WriteString("分析服务器日志，提取错误信息并提供排查建议\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
@@ -599,27 +578,65 @@ var moduleHelps = map[string]string{
 	"nbt": func() string {
 		var b strings.Builder
 		b.WriteString(utils.ColorCyan)
-		b.WriteString("NBT 文件处理模块  nbt / n\n")
+		b.WriteString("NBT 文件查看模块  nbt / n\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("查看或编辑 Minecraft NBT 格式数据文件。\n\n")
+		b.WriteString("查看 Minecraft NBT 格式文件的完整数据结构\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  bex nbt <文件路径> [-e]\n\n")
+		b.WriteString("  bex nbt <文件路径>\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("示例:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  bex nbt level.dat           查看 NBT 文件\n")
-		b.WriteString("  bex nbt player.dat -e        进入编辑模式\n\n")
+		b.WriteString("  bex nbt level.dat\n")
+		b.WriteString("  bex nbt player.dat\n\n")
 		b.WriteString(utils.ColorGreen)
-		b.WriteString("参数:\n")
-		b.WriteString(utils.ColorClear)
-		b.WriteString("  -e   编辑模式（开发中）\n\n")
-		b.WriteString(utils.ColorYellow)
 		b.WriteString("说明:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  支持玩家存档、level.dat 等各类 NBT 文件\n")
-		b.WriteString("  由于在 CLI 中实现编辑功能过于复杂，因此暂时不进行开发...\n")
+		b.WriteString("  • 支持查看玩家数据、世界数据等 NBT 文件\n")
+		b.WriteString("  • 以树形结构展示数据层级\n")
+		return b.String()
+	}(),
+
+	"editnbt": func() string {
+		var b strings.Builder
+		b.WriteString(utils.ColorCyan)
+		b.WriteString("NBT 编辑器模块  editnbt / e\n")
+		b.WriteString(utils.ColorClear)
+		b.WriteString("全功能交互式 NBT 编辑器，支持增删改查操作\n\n")
+		b.WriteString(utils.ColorGreen)
+		b.WriteString("用法:\n")
+		b.WriteString(utils.ColorClear)
+		b.WriteString("  bex editnbt <文件路径>\n\n")
+		b.WriteString(utils.ColorGreen)
+		b.WriteString("示例:\n")
+		b.WriteString(utils.ColorClear)
+		b.WriteString("  bex editnbt level.dat\n")
+		b.WriteString("  bex editnbt player.dat\n")
+		b.WriteString("  bex e ./world/playerdata/xxx.dat\n\n")
+		b.WriteString(utils.ColorGreen)
+		b.WriteString("支持的文件格式:\n")
+		b.WriteString(utils.ColorClear)
+		b.WriteString("  .dat  .nbt  .schematic  .litematic  .mca  .mcr\n\n")
+		b.WriteString(utils.ColorGreen)
+		b.WriteString("编辑器快捷键:\n")
+		b.WriteString(utils.ColorClear)
+		b.WriteString("  ↑/↓/PgUp/PgDn   导航\n")
+		b.WriteString("  Enter/Space     展开/折叠节点\n")
+		b.WriteString("  e               编辑当前节点值\n")
+		b.WriteString("  r               重命名当前节点\n")
+		b.WriteString("  a               新增子节点\n")
+		b.WriteString("  d/Delete        删除当前节点\n")
+		b.WriteString("  Ctrl+S          保存更改\n")
+		b.WriteString("  Ctrl+Q          退出编辑器\n")
+		b.WriteString("  ?               显示帮助\n\n")
+		b.WriteString(utils.ColorGreen)
+		b.WriteString("说明:\n")
+		b.WriteString(utils.ColorClear)
+		b.WriteString("  • 文件不存在时自动创建空 NBT 文件（Region 格式除外）\n")
+		b.WriteString("  • 退出时自动恢复终端状态\n")
+		b.WriteString("  • 若终端显示异常，可设置环境变量：\n")
+		b.WriteString("    BEX_NO_ALTSCREEN=1 bex editnbt <文件>\n")
 		return b.String()
 	}(),
 
@@ -628,7 +645,7 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorCyan)
 		b.WriteString("启动脚本生成模块  script / s\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("通过 AI 根据需求生成优化的服务器启动脚本。\n\n")
+		b.WriteString("根据服务器配置需求，自动生成优化的启动脚本\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
@@ -636,7 +653,7 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("示例:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  bex script \"1.20.1 Paper，4G 内存\"\n")
+		b.WriteString("  bex script \"1.20.1 Paper，分配 4G 内存\"\n")
 		b.WriteString("  bex script \"原版 1.21\" -o ./server\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("参数:\n")
@@ -650,7 +667,7 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorCyan)
 		b.WriteString("热力图生成模块  heatmap / h\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("读取 playerdata 目录，在终端显示所有玩家的游玩时长热力图\n\n")
+		b.WriteString("分析 playerdata 目录，生成玩家在线时长的可视化分布\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
@@ -663,14 +680,14 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("参数:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  -o <路径>   同时将结果保存为文本文件（默认不保存）\n\n")
-		b.WriteString(utils.ColorYellow)
-		b.WriteString("颜色说明:\n")
+		b.WriteString("  -o <路径>   将结果保存为文本文件（可选）\n\n")
+		b.WriteString(utils.ColorGreen)
+		b.WriteString("时长分级:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  蓝色  < 1 天   萌新\n")
-		b.WriteString("  绿色  1~7 天   轻度\n")
-		b.WriteString("  黄色  7~30 天  中度\n")
-		b.WriteString("  红色  > 30 天  重度\n")
+		b.WriteString("  • 蓝色  < 1 天    新玩家\n")
+		b.WriteString("  • 绿色  1~7 天    普通玩家\n")
+		b.WriteString("  • 黄色  7~30 天   活跃玩家\n")
+		b.WriteString("  • 红色  > 30 天   核心玩家\n")
 		return b.String()
 	}(),
 
@@ -679,7 +696,7 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorCyan)
 		b.WriteString("世界分析模块  world / w\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("扫描指定目录下的所有 Minecraft 世界文件并统计信息。\n\n")
+		b.WriteString("扫描目录下的所有 Minecraft 世界，统计文件信息并检测异常\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
@@ -689,44 +706,46 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorClear)
 		b.WriteString("  bex world ./server\n")
 		b.WriteString("  bex world ./worlds\n\n")
-		b.WriteString(utils.ColorYellow)
-		b.WriteString("说明:\n")
+		b.WriteString(utils.ColorGreen)
+		b.WriteString("分析内容:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  扫描所有含 level.dat 的子目录，统计文件数量、大小、维度\n")
-		b.WriteString("  并检测可能损坏的世界文件且给出相应的见解\n")
+		b.WriteString("  • 识别所有包含 level.dat 的世界目录\n")
+		b.WriteString("  • 统计各维度文件数量和大小\n")
+		b.WriteString("  • 检测可能损坏的世界文件\n")
+		b.WriteString("  • 提供修复建议\n")
 		return b.String()
 	}(),
 
-	"injectdll": func() string {
+	"dll": func() string {
 		var b strings.Builder
 		b.WriteString(utils.ColorCyan)
-		b.WriteString("DLL 注入模块  injectdll / i  （仅 Windows）\n")
+		b.WriteString("DLL 注入模块  dll / d  （仅 Windows）\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("将指定 DLL 注入到目标进程，需要管理员权限。\n\n")
+		b.WriteString("将指定 DLL 注入到目标进程（需要管理员权限）\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("示例:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  bex injectdll -d ./mod.dll\n")
-		b.WriteString("  bex injectdll -d ./mod.dll -p Minecraft.Windows.exe\n")
-		b.WriteString("  bex injectdll -i  \n")
-		b.WriteString("  bex injectdll -c\n\n")
+		b.WriteString("  bex dll -d ./mod.dll\n")
+		b.WriteString("  bex dll -d ./mod.dll -p Minecraft.Windows.exe\n")
+		b.WriteString("  bex dll -i\n")
+		b.WriteString("  bex dll -c\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("参数:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  -d <路径>    DLL 文件路径\n")
-		b.WriteString("  -p <进程>   注入目标进程名（默认 Minecraft.Windows.exe）\n")
-		b.WriteString("  -t <时间>   定时注入，如 -t 1m30s\n")
-		b.WriteString("  -i           使用上次保存的 DLL 路径直接注入\n")
-		b.WriteString("  -c           重置配置文件\n")
+		b.WriteString("  -d <路径>   DLL 文件路径\n")
+		b.WriteString("  -p <进程>   目标进程名（默认 Minecraft.Windows.exe）\n")
+		b.WriteString("  -t <时间>   延迟注入，如 -t 1m30s\n")
+		b.WriteString("  -i          使用上次保存的 DLL 路径注入\n")
+		b.WriteString("  -c          重置配置文件\n")
 		return b.String()
 	}(),
 
 	"icon": func() string {
 		var b strings.Builder
 		b.WriteString(utils.ColorCyan)
-		b.WriteString("服务器图标生成模块  icon / ic\n")
+		b.WriteString("服务器图标生成模块  icon / i\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("将图片转换为 64×64 的 server-icon.png\n\n")
+		b.WriteString("将图片转换为 64×64 的 server-icon.png 格式\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
@@ -741,10 +760,10 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorClear)
 		b.WriteString("  -o <路径>   输出目录（默认当前目录）\n")
 		b.WriteString("  -n <名称>   输出文件名（默认 server-icon.png）\n\n")
-		b.WriteString(utils.ColorYellow)
-		b.WriteString("说明:\n")
+		b.WriteString(utils.ColorGreen)
+		b.WriteString("支持的输入格式:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  支持 PNG、JPG、BMP、GIF 格式输入\n")
+		b.WriteString("  PNG、JPG、BMP、GIF\n")
 		return b.String()
 	}(),
 
@@ -753,7 +772,7 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorCyan)
 		b.WriteString("世界备份模块  backup / b\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("支持冷/热备份，定时定量备份世界，模组，插件等文件夹到备份文件夹\n\n")
+		b.WriteString("支持冷/热备份，可定时定量备份世界、模组等文件\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
@@ -766,27 +785,26 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("参数:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  -b <目录>   基础工作目录（必填）\n")
-		b.WriteString("  -t <目录>   要备份的子目录名（必填）\n")
-		b.WriteString("  -v <时间>   备份间隔，如 30m、1h30m\n")
-		b.WriteString("  -x <次数>   最大备份次数\n\n")
-		b.WriteString("  -l          循环执行模式\n")
-		b.WriteString(utils.ColorYellow)
+		b.WriteString("  -b <目录>   基础工作目录（必需）\n")
+		b.WriteString("  -t <目录>   要备份的子目录（必需）\n")
+		b.WriteString("  -v <时间>   备份间隔，支持格式：30m、1h30m\n")
+		b.WriteString("  -x <次数>   最大保留的备份数量\n")
+		b.WriteString("  -l          循环执行模式\n\n")
+		b.WriteString(utils.ColorGreen)
 		b.WriteString("说明:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  备份文件存放在工作目录下的 BEX_BackUps 文件夹\n")
+		b.WriteString("  • 备份文件保存在工作目录下的 BEX_BackUps 文件夹\n")
+		b.WriteString("  • 支持热备份（服务器运行时备份）\n")
 		return b.String()
 	}(),
 }
 
-// aliasToModule 将命令简写映射到模块名
 var aliasToModule = map[string]string{
 	"q": "query", "p": "ping", "r": "rcon", "l": "log",
-	"n": "nbt", "s": "script", "h": "heatmap", "w": "world",
-	"i": "injectdll", "ic": "icon", "b": "backup",
+	"n": "nbt", "e": "editnbt", "s": "script", "h": "heatmap", "w": "world",
+	"d": "dll", "i": "icon", "b": "backup",
 }
 
-// showModuleHelp 显示模块帮助
 func showModuleHelp(module string) {
 	if alias, ok := aliasToModule[module]; ok {
 		module = alias

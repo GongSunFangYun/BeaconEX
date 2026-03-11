@@ -122,31 +122,64 @@ func QueryServerAuto(target string) {
 	var e []string
 	timeout := time.After(6 * time.Second)
 
+	var javaResult *result
+	var bedrockResult *result
+
 	for i := 0; i < 2; i++ {
 		select {
 		case res := <-javaChan:
+			r := res
 			if res.err == nil {
-				if javaInfo, ok := res.info.(*JavaServerInfo); ok {
-					displayServerInfo(target, javaInfo, res.latency, true)
-				}
-				return
+				javaResult = &r
+			} else {
+				e = append(e, fmt.Sprintf("Java版: %v", res.err))
 			}
-			e = append(e, fmt.Sprintf("Java版: %v", res.err))
 
 		case res := <-bedrockChan:
+			r := res
 			if res.err == nil {
-				if bedrockInfo, ok := res.info.(*BedrockServerInfo); ok {
-					displayServerInfo(target, bedrockInfo, res.latency, false)
-				}
-				return
+				bedrockResult = &r
+			} else {
+				e = append(e, fmt.Sprintf("基岩版: %v", res.err))
 			}
-			e = append(e, fmt.Sprintf("基岩版: %v", res.err))
 
 		case <-timeout:
+			if javaResult != nil || bedrockResult != nil {
+				break
+			}
 			utils.LogError("查询超时 (6秒)")
 			return
 		}
 	}
+
+	if javaResult != nil && bedrockResult != nil {
+		utils.LogWarn("%s### 似乎双版本查询均出现了响应(这可能是目标主机开设了跨版本代理服务器) ###%s",
+			utils.ColorBrightYellow, utils.ColorClear)
+		utils.LogInfo("已返回汇总查询结果...")
+		utils.LogInfo("━━━━━━━━━━━━ JE ━━━━━━━━━━━━")
+		if javaInfo, ok := javaResult.info.(*JavaServerInfo); ok {
+			displayServerInfo(target, javaInfo, javaResult.latency, true)
+		}
+		utils.LogInfo("━━━━━━━━━━━━ BE ━━━━━━━━━━━━")
+		if bedrockInfo, ok := bedrockResult.info.(*BedrockServerInfo); ok {
+			displayServerInfo(target, bedrockInfo, bedrockResult.latency, false)
+		}
+		return
+	}
+
+	if javaResult != nil {
+		if javaInfo, ok := javaResult.info.(*JavaServerInfo); ok {
+			displayServerInfo(target, javaInfo, javaResult.latency, true)
+		}
+		return
+	}
+	if bedrockResult != nil {
+		if bedrockInfo, ok := bedrockResult.info.(*BedrockServerInfo); ok {
+			displayServerInfo(target, bedrockInfo, bedrockResult.latency, false)
+		}
+		return
+	}
+
 	utils.LogError("所有查询方式都失败：")
 	for _, err := range e {
 		utils.LogError("  %s", err)
@@ -248,7 +281,6 @@ func ParseAddress(address string, defaultPort int) (*ResolvedAddress, error) {
 	host, port := parseHostPort(address)
 
 	if port != 0 {
-		// 验证主机名
 		if host == "" {
 			return nil, fmt.Errorf("无效的地址: %s", address)
 		}
@@ -407,7 +439,6 @@ func readUTF(r io.Reader) (string, error) {
 }
 
 func (p *JavaPinger) Handshake() error {
-	// 构建握手包
 	buf := new(bytes.Buffer)
 
 	err := writeVarint(buf, 0x00)

@@ -247,7 +247,7 @@ func displayWidth(s string) int {
 	return width
 }
 
-func padRight(s string, width int) string {
+func Pr(s string, width int) string {
 	w := displayWidth(s)
 	if w >= width {
 		return s
@@ -285,7 +285,7 @@ func (h *HeatMapInstance) displayASCIIChart(players []PlayerData, timestamp stri
 
 	fmt.Printf("\n%s%s%s │  游玩天数  │ 进度条%s\n",
 		utils.ColorGreen,
-		padRight(strings.Repeat(" ", rankWidth+1)+"玩家名称", rankWidth+1+nameColWidth),
+		Pr(strings.Repeat(" ", rankWidth+1)+"玩家名称", rankWidth+1+nameColWidth),
 		utils.ColorClear,
 		utils.ColorClear,
 	)
@@ -310,7 +310,7 @@ func (h *HeatMapInstance) displayASCIIChart(players []PlayerData, timestamp stri
 		}
 
 		name := truncateToWidth(player.Name, nameColWidth)
-		paddedName := padRight(name, nameColWidth)
+		paddedName := Pr(name, nameColWidth)
 
 		fmt.Printf("%s%*d.%s ", utils.ColorBrightYellow, rankWidth-1, i+1, utils.ColorClear)
 		fmt.Print(paddedName)

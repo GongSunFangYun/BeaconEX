@@ -2,21 +2,22 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-set APP_NAME=bex
-set VERSION=3.0.0
-
+set APP_NAME=beaconex
 set OUT_DIR=build
+set VERSION_DISPLAY=3.0.1
+set VERSION=301
 
-echo ==================================================
-echo   BeaconEX 跨平台编译脚本
-echo   版本: %VERSION%
-echo ==================================================
+echo [INFO]  BeaconEX Build Script v%VERSION_DISPLAY%
 
 for /f "tokens=*" %%i in ('go version 2^>^&1') do set GO_VER=%%i
-echo [信息] %GO_VER%
-echo --------------------------------------------------
+echo [INFO]  Go toolchain: %GO_VER%
 
-if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
+if not exist "%OUT_DIR%" (
+    mkdir "%OUT_DIR%"
+    echo [INFO]  Created output directory: %OUT_DIR%
+)
+
+echo [INFO]  Build version: %VERSION_DISPLAY% ^(filename tag: v%VERSION%^)
 
 set PASS=0
 set FAIL=0
@@ -27,62 +28,72 @@ goto :start_build
 :build
     set B_GOOS=%1
     set B_GOARCH=%2
-    set B_SUFFIX=%3
+    set B_PLATFORM=%3
+    set B_ARCH=%4
 
-    if "%B_GOOS%"=="windows" (
-        set B_OUT=%OUT_DIR%\%APP_NAME%_%B_SUFFIX%.exe
-    ) else (
-        set B_OUT=%OUT_DIR%\%APP_NAME%_%B_SUFFIX%
-    )
+    set B_OUT=%OUT_DIR%\%APP_NAME%-%B_PLATFORM%-%B_ARCH%-v%VERSION%
+    if "%B_GOOS%"=="windows" set B_OUT=%B_OUT%.exe
 
-    echo [编译] %B_GOOS% / %B_GOARCH%  -^>  %B_OUT%
+    echo [INFO]  Compiling %B_GOOS%/%B_GOARCH% -^> %B_OUT%
 
     set GOOS=%B_GOOS%
     set GOARCH=%B_GOARCH%
-    go build -trimpath -ldflags="-s -w -X main.CurrentVersion=%VERSION%" -o "%B_OUT%" . 2>build_err.tmp
+    set CGO_ENABLED=0
+    set GOARM=
+    if "%B_GOARCH%"=="arm" set GOARM=7
 
-    if !errorlevel! == 0 (
-        echo [  OK ] %B_OUT%
-        set /a PASS+=1
-    ) else (
-        echo [ FAIL] %B_GOOS%/%B_GOARCH%
-        type build_err.tmp
-        set /a FAIL+=1
-        set FAIL_LIST=!FAIL_LIST! %B_GOOS%/%B_GOARCH%
-    )
+    go build -trimpath -ldflags="-s -w -X main.CurrentVersion=%VERSION_DISPLAY%" -o "%B_OUT%" . 2>build_err.tmp
 
+    if errorlevel 1 goto :build_fail
+
+    for %%F in ("%B_OUT%") do set B_SIZE=%%~zF
+    echo [INFO]  OK: %B_OUT% (!B_SIZE! bytes)
+    set /a PASS+=1
+    goto :build_done
+
+    :build_fail
+    echo [ERROR] FAILED: %B_GOOS%/%B_GOARCH%
+    for /f "tokens=*" %%L in (build_err.tmp) do echo [ERROR]   %%L
+    set /a FAIL+=1
+    set FAIL_LIST=!FAIL_LIST! %B_GOOS%/%B_GOARCH%
+
+    :build_done
     del /f /q build_err.tmp 2>nul
-    echo.
+    set GOOS=
+    set GOARCH=
+    set CGO_ENABLED=
+    set GOARM=
     goto :eof
 
 :start_build
 
-echo 开始编译 Windows...
-echo --------------------------------------------------
-call :build windows amd64 windows_amd64
-call :build windows arm64 windows_arm64
+echo [INFO]  Building Windows targets...
+call :build windows amd64   windows x86_64
+call :build windows arm64   windows arm64
+call :build windows 386     windows x86
 
-echo 开始编译 Linux...
-echo --------------------------------------------------
-call :build linux amd64 linux_amd64
-call :build linux arm64 linux_arm64
+echo [INFO]  Building Linux targets...
+call :build linux amd64     linux x86_64
+call :build linux arm64     linux arm64
+call :build linux arm       linux armv7
+call :build linux 386       linux x86
+call :build linux riscv64   linux riscv64
 
-echo 开始编译 macOS...
-echo --------------------------------------------------
-call :build darwin amd64 darwin_amd64
-call :build darwin arm64 darwin_arm64
+echo [INFO]  Building macOS targets...
+call :build darwin amd64    darwin x86_64
+call :build darwin arm64    darwin arm64
 
-echo ==================================================
-echo   编译完成
-echo   成功: %PASS%  失败: %FAIL%
-if not "%FAIL_LIST%"=="" (
-    echo   失败平台: %FAIL_LIST%
-)
-echo ==================================================
+echo [INFO]  Building FreeBSD targets...
+call :build freebsd amd64   freebsd x86_64
+call :build freebsd arm64   freebsd arm64
+
+echo [INFO]  Build finished. Succeeded: %PASS%  Failed: %FAIL%
+if not "%FAIL_LIST%"=="" echo [WARN]  Failed targets:%FAIL_LIST%
+
+echo [INFO]  Artifacts in "%OUT_DIR%":
+for %%F in ("%OUT_DIR%\*") do echo         %%~nxF  (%%~zF bytes)
 
 echo.
-echo 产物列表:
-dir /b "%OUT_DIR%"
-
+echo Press any key to exit...
+pause >nul
 endlocal
-pause

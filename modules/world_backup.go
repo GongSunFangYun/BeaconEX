@@ -218,7 +218,6 @@ func (w *WorldBackupInstance) performBackup() {
 }
 
 func (w *WorldBackupInstance) addToZip(zipWriter *zip.Writer, sourceDir, basePath string) (int, error) {
-	// 创建临时目录
 	tmpDir, err := os.MkdirTemp("", "bex_backup_*")
 	if err != nil {
 		return 0, fmt.Errorf("创建临时目录失败: %w", err)
@@ -290,8 +289,9 @@ func (w *WorldBackupInstance) addToZip(zipWriter *zip.Writer, sourceDir, basePat
 			return nil
 		}
 
-		zipPath := filepath.Join(basePath, relPath)
-		zipPath = strings.ReplaceAll(zipPath, "\\", "/")
+		relPathSlash := filepath.ToSlash(relPath)
+		baseSlash := filepath.ToSlash(basePath)
+		zipPath := strings.TrimRight(baseSlash, "/") + "/" + relPathSlash
 
 		if info.IsDir() {
 			_, err = zipWriter.Create(zipPath + "/")

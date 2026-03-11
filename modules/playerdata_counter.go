@@ -1,8 +1,10 @@
 package modules
 
 import (
-	"bufio"
+	"compress/gzip"
+	"compress/zlib"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,10 +21,9 @@ type NBTData struct {
 	Data     map[string]interface{}
 }
 
-func NBTProcessor(filePath string, editMode bool) {
+func NBTProcessor(filePath string) {
 	processor := &NBTProcessorInstance{
 		FilePath: filePath,
-		EditMode: editMode,
 	}
 
 	processor.Execute()
@@ -30,7 +31,6 @@ func NBTProcessor(filePath string, editMode bool) {
 
 type NBTProcessorInstance struct {
 	FilePath string
-	EditMode bool
 	Data     *NBTData
 }
 
@@ -46,11 +46,7 @@ func (n *NBTProcessorInstance) Execute() {
 	}
 	n.Data = data
 
-	if n.EditMode {
-		n.editNBT()
-	} else {
-		n.displayNBTInfo()
-	}
+	n.displayNBTInfo()
 }
 
 func (n *NBTProcessorInstance) validateArgs() bool {
@@ -77,17 +73,44 @@ func (n *NBTProcessorInstance) parseNBTFile(filePath string) (*NBTData, error) {
 	if err != nil {
 		return nil, fmt.Errorf("无法打开文件: %w", err)
 	}
-	defer func(file *os.File) {
-		_ = file.Close()
-	}(file)
+	defer func() { _ = file.Close() }()
 
 	fileInfo, err := file.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("无法获取文件信息: %w", err)
 	}
 
+	magic := make([]byte, 2)
+
+	if _, err := io.ReadFull(file, magic); err != nil {
+		return nil, fmt.Errorf("读取文件头失败: %w", err)
+	}
+	if _, err := file.Seek(0, 0); err != nil {
+		return nil, fmt.Errorf("文件 Seek 失败: %w", err)
+	}
+
+	var reader io.Reader
+	switch {
+	case magic[0] == 0x1f && magic[1] == 0x8b:
+		gr, err := gzip.NewReader(file)
+		if err != nil {
+			return nil, fmt.Errorf("gzip 解压失败: %w", err)
+		}
+		defer func() { _ = gr.Close() }()
+		reader = gr
+	case magic[0] == 0x78:
+		zr, err := zlib.NewReader(file)
+		if err != nil {
+			return nil, fmt.Errorf("zlib 解压失败: %w", err)
+		}
+		defer func() { _ = zr.Close() }()
+		reader = zr
+	default:
+		reader = file
+	}
+
 	var data map[string]interface{}
-	decoder := nbt.NewDecoder(file)
+	decoder := nbt.NewDecoder(reader)
 	tagName, err := decoder.Decode(&data)
 	if err != nil {
 		return nil, fmt.Errorf("解析NBT失败 (标签: %s): %w", tagName, err)
@@ -102,7 +125,6 @@ func (n *NBTProcessorInstance) parseNBTFile(filePath string) (*NBTData, error) {
 }
 
 func (n *NBTProcessorInstance) displayNBTInfo() {
-	// 检测是否为玩家数据
 	if strings.Contains(n.Data.FileName, ".dat") && len(n.Data.FileName) == 40 { // UUID格式
 		n.displayPlayerData()
 	} else {
@@ -193,7 +215,6 @@ func (n *NBTProcessorInstance) displayPlayerData() {
 		utils.ColorCyan, utils.ColorClear)
 }
 
-// displayGenericNBT 显示通用NBT数据
 func (n *NBTProcessorInstance) displayGenericNBT() {
 	fmt.Printf("\n%s═══════════════════════════════════════════════════════════════%s\n",
 		utils.ColorCyan, utils.ColorClear)
@@ -282,7 +303,7 @@ func (n *NBTProcessorInstance) displayWorldInfo() {
 		if enabled, ok := dataPacks["Enabled"].([]interface{}); ok {
 			fmt.Printf("\n  %s已启用的数据包:%s\n", utils.ColorGreen, utils.ColorClear)
 			for i, pack := range enabled {
-				if i < 10 { // 只显示前10个
+				if i < 10 {
 					fmt.Printf("    • %v\n", pack)
 				}
 			}
@@ -343,123 +364,6 @@ func (n *NBTProcessorInstance) printValue(val interface{}, depth int) {
 	default:
 		fmt.Printf("%v\n", v)
 	}
-}
-
-func (n *NBTProcessorInstance) editNBT() {
-	utils.LogWarn("NBT编辑器功能正在开发中")
-	utils.LogInfo("当前仅支持查看模式")
-
-	fmt.Printf("\n%s是否进入交互式查看模式？(Y/N)%s ",
-		utils.ColorYellow, utils.ColorClear)
-
-	reader := bufio.NewReader(os.Stdin)
-	response, _ := reader.ReadString('\n')
-	response = strings.TrimSpace(strings.ToUpper(response))
-
-	if response == "Y" {
-		n.interactiveBrowse()
-	} else {
-		n.displayNBTInfo()
-	}
-}
-
-func (n *NBTProcessorInstance) interactiveBrowse() {
-	current := interface{}(n.Data.Data)
-	path := []string{"root"}
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		fmt.Printf("\n%s当前路径: /%s%s\n",
-			utils.ColorGreen, strings.Join(path, "/"), utils.ColorClear)
-
-		i := 0
-		items := make([]string, 0)
-
-		switch v := current.(type) {
-		case map[string]interface{}:
-			fmt.Printf("\n%s目录:%s\n", utils.ColorCyan, utils.ColorClear)
-			for key := range v {
-				items = append(items, key)
-				fmt.Printf("  %s[%d]%s %s\n",
-					utils.ColorYellow, i, utils.ColorClear, key)
-				i++
-			}
-		case []interface{}:
-			fmt.Printf("\n%s数组 (长度 %d):%s\n", utils.ColorCyan, len(v), utils.ColorClear)
-			for idx, item := range v {
-				if idx < 20 {
-					items = append(items, fmt.Sprintf("%d", idx))
-					fmt.Printf("  %s[%d]%s [%d]: ",
-						utils.ColorYellow, idx, utils.ColorClear, idx)
-					n.printValue(item, 0)
-				}
-			}
-		default:
-			fmt.Printf("未知类型: %T\n", v)
-		}
-
-		fmt.Printf("\n%s选项:%s\n", utils.ColorPurple, utils.ColorClear)
-		fmt.Printf("  • 输入数字选择项目\n")
-		fmt.Printf("  • 输入 '..' 返回上级\n")
-		fmt.Printf("  • 输入 'q' 退出\n\n")
-		fmt.Printf("%s>%s ", utils.ColorGreen, utils.ColorClear)
-
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		switch input {
-		case "q":
-			return
-		case "..":
-			if len(path) > 1 {
-				path = path[:len(path)-1]
-				navResult := n.navigateTo(path)
-				if navResult != nil {
-					current = navResult
-				}
-			}
-		default:
-			var idx int
-			_, err := fmt.Sscanf(input, "%d", &idx)
-			if err == nil && idx >= 0 && idx < len(items) {
-				path = append(path, items[idx])
-				navResult := n.navigateTo(path)
-				if navResult != nil {
-					current = navResult
-				}
-			}
-		}
-	}
-}
-
-func (n *NBTProcessorInstance) navigateTo(path []string) interface{} {
-	var current interface{} = n.Data.Data
-
-	for i := 1; i < len(path); i++ {
-		switch v := current.(type) {
-		case map[string]interface{}:
-			if next, ok := v[path[i]]; ok {
-				current = next
-			} else {
-				return current
-			}
-		case []interface{}:
-			var idx int
-			_, err := fmt.Sscanf(path[i], "%d", &idx)
-			if err != nil {
-				return nil
-			}
-			if idx >= 0 && idx < len(v) {
-				current = v[idx]
-			} else {
-				return current
-			}
-		default:
-			return current
-		}
-	}
-
-	return current
 }
 
 func (n *NBTProcessorInstance) getPlayerName(data map[string]interface{}) string {
@@ -566,9 +470,8 @@ func (n *NBTProcessorInstance) displayInventory(data map[string]interface{}) {
 	}
 
 	fmt.Printf("  共有 %d 个物品栏位，%d 个物品\n", len(inventory), itemCount)
-
-	// 显示快捷栏物品
 	fmt.Printf("\n  %s快捷栏物品:%s\n", utils.ColorGreen, utils.ColorClear)
+
 	shown := 0
 	for _, item := range inventory {
 		if itemMap, ok := item.(map[string]interface{}); ok {
@@ -589,7 +492,6 @@ func (n *NBTProcessorInstance) displayItemSummary(item map[string]interface{}) {
 	id, _ := item["id"].(string)
 	count, _ := item["Count"].(byte)
 
-	// 移除 minecraft: 前缀
 	id = strings.TrimPrefix(id, "minecraft:")
 
 	fmt.Printf("    • %s x%d\n", id, count)

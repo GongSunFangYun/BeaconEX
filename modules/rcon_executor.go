@@ -5,20 +5,41 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"golang.org/x/term"
 	"io"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"bex/utils"
+	"github.com/mattn/go-isatty"
+	"golang.org/x/term"
 )
 
-// 错误代码
+func readPassword() (string, error) {
+	if isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd()) {
+		passwordBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+		fmt.Println()
+		if err != nil {
+			return "", err
+		}
+		return string(passwordBytes), nil
+	}
+
+	utils.LogWarn("当前环境非交互式终端，密码将以明文显示")
+	scanner := bufio.NewScanner(os.Stdin)
+	if scanner.Scan() {
+		fmt.Println()
+		return strings.TrimRight(scanner.Text(), "\r\n"), nil
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return "", fmt.Errorf("stdin 已关闭")
+}
+
 const (
 	ErrRuntimeRconConnection = iota + 1
 	ErrRuntimeRconAuth
@@ -232,13 +253,11 @@ func RconExecutorEntry(loginStr string) {
 	}
 
 	fmt.Printf("输入 %s 的 RCON 密码: ", username)
-	passwordBytes, err := term.ReadPassword(int(syscall.Stdin))
-	fmt.Println()
+	password, err := readPassword()
 	if err != nil {
 		utils.LogError("读取密码失败: %s", err)
 		return
 	}
-	password := string(passwordBytes)
 	if password == "" {
 		utils.LogError("密码不能为空")
 		return

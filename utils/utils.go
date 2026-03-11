@@ -10,10 +10,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
-const (
+var (
 	ColorClear = "\033[0m"
 
 	StyleBold      = "\033[1m"
@@ -69,8 +70,205 @@ var mcColorMap = map[string]string{
 	"r": ColorClear,
 }
 
+type TermCaps struct {
+	EnterAltScreen string
+	LeaveAltScreen string
+	HideCursor     string
+	ShowCursor     string
+	EnableMouse    string
+	DisableMouse   string
+	AltScreenOK    bool
+	MouseOK        bool
+	FullSGR        bool
+	BasicSGR       bool
+}
+
+var (
+	TC     TermCaps
+	tcOnce sync.Once
+)
+
+func InitTermCap() {
+	tcOnce.Do(func() {
+		TC = detectTermCaps()
+		applyToGlobals(TC)
+	})
+}
+
+func init() {
+	InitTermCap()
+}
+
+func detectTermCaps() TermCaps {
+	var c TermCaps
+
+	term := strings.ToLower(strings.TrimSpace(os.Getenv("TERM")))
+	colorterm := strings.ToLower(strings.TrimSpace(os.Getenv("COLORTERM")))
+	noColor := os.Getenv("NO_COLOR") != ""
+	termProg := strings.ToLower(strings.TrimSpace(os.Getenv("TERM_PROGRAM")))
+	isTermux := os.Getenv("TERMUX_VERSION") != "" || strings.Contains(os.Getenv("PREFIX"), "termux")
+
+	if term == "dumb" || noColor {
+		return c
+	}
+
+	forceNoPrivate := os.Getenv("BEX_NO_ALTSCREEN") == "1"
+
+	windowsVTOK := tryEnableWindowsVT()
+
+	if !windowsVTOK {
+		c.BasicSGR = true
+		return c
+	}
+
+	isTTY := isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
+
+	if isTTY {
+		if isTermux {
+			c.FullSGR = true
+			c.BasicSGR = true
+		}
+
+		if term == "" && windowsVTOK {
+			c.FullSGR = true
+			c.BasicSGR = true
+		}
+
+		if strings.Contains(term, "256color") || strings.Contains(term, "truecolor") ||
+			colorterm == "truecolor" || colorterm == "24bit" {
+			c.FullSGR = true
+			c.BasicSGR = true
+		}
+
+		if !c.FullSGR {
+			for _, t := range []string{
+				"xterm", "rxvt", "screen", "tmux", "linux",
+				"konsole", "gnome", "vte", "alacritty", "kitty",
+				"wezterm", "iterm", "st", "foot",
+			} {
+				if strings.HasPrefix(term, t) || strings.Contains(termProg, t) {
+					c.FullSGR = true
+					c.BasicSGR = true
+					break
+				}
+			}
+		}
+
+		if !c.BasicSGR {
+			c.BasicSGR = true
+		}
+	}
+
+	if forceNoPrivate {
+		return c
+	}
+
+	privateOK := false
+
+	if term == "" && windowsVTOK {
+		privateOK = true
+	}
+
+	if termProg != "" {
+		privateOK = true
+	}
+
+	if isTermux {
+		privateOK = true
+	}
+
+	if colorterm == "truecolor" || colorterm == "24bit" {
+		privateOK = true
+	}
+
+	if !privateOK {
+		for _, t := range []string{
+			"xterm-256color", "xterm-direct",
+			"rxvt-unicode", "rxvt-unicode-256color",
+			"screen", "screen-256color",
+			"tmux", "tmux-256color",
+			"alacritty", "kitty", "foot", "st-256color",
+			"linux",
+		} {
+			if term == t || strings.HasPrefix(term, t+"-") {
+				privateOK = true
+				break
+			}
+		}
+	}
+
+	if privateOK {
+		c.AltScreenOK = true
+		c.EnterAltScreen = "\x1b[?1049h"
+		c.LeaveAltScreen = "\x1b[?1049l"
+		c.HideCursor = "\x1b[?25l"
+		c.ShowCursor = "\x1b[?25h"
+		c.EnableMouse = "\x1b[?1000h\x1b[?1006h"
+		c.DisableMouse = "\x1b[?1000l\x1b[?1006l"
+		c.MouseOK = true
+	}
+
+	return c
+}
+
+func applyToGlobals(c TermCaps) {
+	if c.FullSGR {
+		return
+	}
+
+	if c.BasicSGR {
+		StyleDim = ""
+		StyleItalic = ""
+		ColorBrightBlack = ColorBlack
+		ColorBrightRed = ColorRed
+		ColorBrightGreen = ColorGreen
+		ColorBrightYellow = ColorYellow
+		ColorBrightBlue = ColorBlue
+		ColorBrightPurple = ColorPurple
+		ColorBrightCyan = ColorCyan
+		ColorBrightWhite = ColorWhite
+		return
+	}
+
+	ColorClear = ""
+	StyleBold = ""
+	StyleDim = ""
+	StyleItalic = ""
+	StyleUnderline = ""
+	ColorBlack = ""
+	ColorRed = ""
+	ColorGreen = ""
+	ColorYellow = ""
+	ColorBlue = ""
+	ColorPurple = ""
+	ColorCyan = ""
+	ColorWhite = ""
+	ColorBrightBlack = ""
+	ColorBrightRed = ""
+	ColorBrightGreen = ""
+	ColorBrightYellow = ""
+	ColorBrightBlue = ""
+	ColorBrightPurple = ""
+	ColorBrightCyan = ""
+	ColorBrightWhite = ""
+}
+
+func (tc *TermCaps) Reverse() string {
+	if tc.BasicSGR || tc.FullSGR {
+		return "\x1b[7m"
+	}
+	return StyleBold
+}
+
+func (tc *TermCaps) FillReverse() string {
+	if tc.AltScreenOK && (tc.BasicSGR || tc.FullSGR) {
+		return "\x1b[7m\x1b[K" + ColorClear
+	}
+	return ""
+}
+
 func Colorize(text string, colorCode string) string {
-	if !isatty.IsTerminal(os.Stdout.Fd()) && !isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+	if colorCode == "" {
 		return text
 	}
 	return colorCode + text + ColorClear
@@ -287,7 +485,6 @@ func FormatFileSize(bytes int64) string {
 func LogDebug(format string, args ...interface{}) {
 	msg := formatMessage(format, args...)
 	timestamp := time.Now().Format("2006/01/02 15:04:05")
-
 	_, err := fmt.Fprintf(colorableStdout, "%s%s%s %s[DEBUG]%s %s\n",
 		ColorBrightBlue, timestamp, ColorClear,
 		StyleDim, ColorClear, msg)
@@ -299,7 +496,6 @@ func LogDebug(format string, args ...interface{}) {
 func LogInfo(format string, args ...interface{}) {
 	msg := formatMessage(format, args...)
 	timestamp := time.Now().Format("2006/01/02 15:04:05")
-
 	_, err := fmt.Fprintf(colorableStdout, "%s%s%s %s[INFO]%s %s\n",
 		ColorBrightBlue, timestamp, ColorClear,
 		ColorGreen, ColorClear, msg)
@@ -311,7 +507,6 @@ func LogInfo(format string, args ...interface{}) {
 func LogWarn(format string, args ...interface{}) {
 	msg := formatMessage(format, args...)
 	timestamp := time.Now().Format("2006/01/02 15:04:05")
-
 	_, err := fmt.Fprintf(colorableStdout, "%s%s%s %s[WARN]%s %s\n",
 		ColorBrightBlue, timestamp, ColorClear,
 		ColorYellow, ColorClear, msg)
@@ -323,7 +518,6 @@ func LogWarn(format string, args ...interface{}) {
 func LogError(format string, args ...interface{}) {
 	msg := formatMessage(format, args...)
 	timestamp := time.Now().Format("2006/01/02 15:04:05")
-
 	_, err := fmt.Fprintf(colorableStderr, "%s%s%s %s[ERROR]%s %s\n",
 		ColorBrightBlue, timestamp, ColorClear,
 		ColorRed, ColorClear, msg)
