@@ -1,6 +1,7 @@
 <div align="left">
 
 <img src="winres/ICON.png" alt="Logo" width="160" height="160">
+</div>
 
 # BeaconEX - 我们Minecraft也要有自己的[图吧工具箱](https://tubatool.com.cn/?lang=ZH)
 
