@@ -2,8 +2,6 @@
 
 <img src="winres/ICON.png" alt="Logo" width="160" height="160">
 
-</div>
-
 # BeaconEX - 我们Minecraft也要有自己的[图吧工具箱](#)
 
 [![GitHub release](https://img.shields.io/github/v/release/GongSunFangYun/BeaconEX?style=flat-square)]()
@@ -13,6 +11,8 @@
 [![Issues](https://img.shields.io/github/issues/GongSunFangYun/BeaconEX?style=flat-square)]()
 [![License](https://img.shields.io/github/license/GongSunFangYun/BeaconEX?style=flat-square)]()
 ![简体中文支持](https://img.shields.io/badge/简体中文-支持-ff8c00?style=flat-square&labelColor=ff8c00&color=ffd700)
+
+</div>
 
 ## 项目简介
 
