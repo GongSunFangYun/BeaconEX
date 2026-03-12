@@ -87,11 +87,8 @@ chmod +x build.sh
 | 文件 | 平台 | 架构 | 说明 |
 |------|------|------|------|
 | `beaconex-windows-x86_64-v301.exe` | Windows | x86_64 | 主程序 |
-| `beaconex-windows-x86_64-v301-setup.exe` | Windows | x86_64 | 安装程序 |
 | `beaconex-windows-x86-v301.exe` | Windows | x86 | 主程序 |
-| `beaconex-windows-x86-v301-setup.exe` | Windows | x86 | 安装程序 |
 | `beaconex-windows-arm64-v301.exe` | Windows | ARM64 | 主程序 |
-| `beaconex-windows-arm64-v301-setup.exe` | Windows | ARM64 | 安装程序 |
 | `beaconex-linux-x86_64-v301` | Linux | x86_64 | 主程序 |
 | `beaconex-linux-x86-v301` | Linux | x86 | 主程序 |
 | `beaconex-linux-arm64-v301` | Linux | ARM64 | 主程序 |
@@ -101,6 +98,13 @@ chmod +x build.sh
 | `beaconex-darwin-arm64-v301` | macOS | Apple Silicon | 主程序 |
 | `beaconex-freebsd-x86_64-v301` | FreeBSD | x86_64 | 主程序 |
 | `beaconex-freebsd-arm64-v301` | FreeBSD | ARM64 | 主程序 |
+
+注：下列产物由 **Advanced Installer** 构建
+| 文件 | 平台 | 架构 | 说明 |
+|------|------|------|------|
+| `beaconex-windows-x86_64-v301-setup.exe` | Windows | x86_64 | 安装程序 |
+| `beaconex-windows-x86-v301-setup.exe` | Windows | x86 | 安装程序 |
+| `beaconex-windows-arm64-v301-setup.exe` | Windows | ARM64 | 安装程序 |
 
 ## 安装说明
 
