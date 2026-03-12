@@ -22,7 +22,7 @@ const (
 	ReleaseURL          = "https://github.com/GongSunFangYun/BeaconEX/releases/latest"
 	VersionFileURL      = "https://github.com/GongSunFangYun/BeaconEX/releases/latest/download/version.json"
 	ProxyURL            = "https://gh-proxy.com/"
-	CurrentVersion      = "3.0.0"
+	CurrentVersion      = "3.0.2"
 )
 
 type VersionInfo struct {
@@ -32,8 +32,10 @@ type VersionInfo struct {
 }
 
 type Config struct {
-	LastCheckUpdate string `json:"last_check_update"`
-	DisableUpdate   bool   `json:"disable_update"`
+	LastCheckUpdate              string `json:"last_check_update"`
+	DisableUpdate                bool   `json:"disable_update"`
+	DLLInjectorTargetFilePath    string `json:"dll_injector_target_file_path,omitempty"`
+	DLLInjectorTargetProcessName string `json:"dll_injector_target_process_name,omitempty"`
 }
 
 func main() {
@@ -62,8 +64,8 @@ func main() {
 		handleRCON(args)
 	case "log", "l":
 		handleLog(args)
-	case "nbt", "n":
-		handleNBT(args)
+	case "checknbt", "c":
+		handleCheckNBT(args)
 	case "editnbt", "e":
 		handleEditNBT(args)
 	case "script", "s":
@@ -239,19 +241,19 @@ func handleLog(args []string) {
 	modules.LogAnalyzer(args[0])
 }
 
-func handleNBT(args []string) {
+func handleCheckNBT(args []string) {
 	if len(args) == 0 {
-		utils.LogError("NBT模块缺少文件路径")
-		showModuleHelp("nbt")
+		utils.LogError("CheckNBT模块缺少文件路径")
+		showModuleHelp("checknbt")
 		return
 	}
 
 	if args[0] == "?" {
-		showModuleHelp("nbt")
+		showModuleHelp("checknbt")
 		return
 	}
 
-	modules.NBTProcessor(args[0])
+	modules.CheckNBT(args[0])
 }
 
 func handleEditNBT(args []string) {
@@ -334,35 +336,82 @@ func handleDLLInjector(args []string) {
 	if len(args) == 0 {
 		utils.LogError("DLL注入模块缺少参数")
 		showModuleHelp("dll")
+		waitForKey()
 		return
 	}
 
 	if args[0] == "?" {
 		showModuleHelp("dll")
+		waitForKey()
 		return
 	}
 
+	if len(args) == 1 && args[0] == "-i" {
+		config := LoadConfig()
+		if config.DLLInjectorTargetFilePath == "" {
+			utils.LogError("配置文件中没有找到上次注入的 DLL 路径")
+			utils.LogInfo("请先指定 DLL 路径进行注入，例如: bex dll C:\\path\\to\\mod.dll")
+			waitForKey()
+			return
+		}
+
+		processName := config.DLLInjectorTargetProcessName
+		if processName == "" {
+			processName = "Minecraft.Windows.exe"
+			utils.LogInfo("使用默认目标进程: %s", processName)
+		} else {
+			utils.LogInfo("使用上次注入的目标进程: %s", processName)
+		}
+
+		modules.DLLInjector(config.DLLInjectorTargetFilePath, processName, nil)
+		return
+	}
+
+	if len(args) == 1 && args[0] == "-c" {
+		config := LoadConfig()
+		config.DLLInjectorTargetFilePath = ""
+		config.DLLInjectorTargetProcessName = ""
+		if err := SaveConfig(config); err != nil {
+			utils.LogError("重置配置失败: %s", err)
+			waitForKey()
+			return
+		}
+		utils.LogInfo("DLL 注入配置已重置")
+		waitForKey()
+		return
+	}
+
+	dllPath := ""
+	processName := "Minecraft.Windows.exe"
+
+	if !strings.HasPrefix(args[0], "-") {
+		dllPath = args[0]
+		args = args[1:]
+	}
+
 	params := parseKeyValue(args)
-
-	dllPath := params["d"]
-	processName := params["p"]
-	if processName == "" {
-		processName = "Minecraft.Windows.exe"
+	if p, ok := params["p"]; ok {
+		processName = p
 	}
-	taskTime := params["t"]
-	inject := params["i"] != ""
-	resetConfig := params["c"] != ""
 
-	if resetConfig {
-		modules.DLLInjector("", processName, "", false, true)
-	} else if inject {
-		modules.DLLInjector("", processName, taskTime, true, false)
-	} else if dllPath != "" {
-		modules.DLLInjector(dllPath, processName, taskTime, false, false)
-	} else {
-		utils.LogError("DLL注入参数不完整/配置文件不存在")
-		showModuleHelp("dll")
+	if dllPath == "" {
+		utils.LogError("请指定要注入的 DLL 文件路径")
+		waitForKey()
+		return
 	}
+
+	config := LoadConfig()
+	onSuccess := func(absPath string) {
+		config.DLLInjectorTargetFilePath = absPath
+		config.DLLInjectorTargetProcessName = processName
+		if err := SaveConfig(config); err != nil {
+			utils.LogError("保存配置失败，下次将无法使用 -i 快速注入: %s", err)
+		} else {
+			utils.LogInfo("已保存 DLL 路径和目标进程到配置文件，后续可使用 \"bex dll -i\" 快速注入")
+		}
+	}
+
+	modules.DLLInjector(dllPath, processName, onSuccess)
 }
 
 func handleMakeIcon(args []string) {
@@ -404,42 +453,38 @@ func handleBackup(args []string) {
 		return
 	}
 
-	backupPath := ""
-	selectDir := ""
+	targetDir := ""
+	outputDir := ""
 	backupTime := ""
-	loopExecution := false
+	repeat := false
 	maxBackups := 0
 
+	if !strings.HasPrefix(args[0], "-") {
+		targetDir = args[0]
+		args = args[1:]
+	}
+
 	params := parseKeyValue(args)
-	if b, ok := params["b"]; ok {
-		backupPath = b
+	if o, ok := params["o"]; ok {
+		outputDir = o
 	}
-	if sd, ok := params["t"]; ok {
-		selectDir = sd
+	if v, ok := params["v"]; ok {
+		backupTime = v
 	}
-	if bt, ok := params["v"]; ok {
-		backupTime = bt
-	}
-	if _, ok := params["l"]; ok {
-		loopExecution = true
+	if _, ok := params["r"]; ok {
+		repeat = true
 	}
 	if mx, ok := params["x"]; ok {
 		maxBackups = parseInt(mx, 0)
 	}
 
-	if backupPath == "" {
-		utils.LogError("缺少基础工作目录，请使用 -b 指定")
+	if targetDir == "" {
+		utils.LogError("请指定要备份的文件夹路径")
 		showModuleHelp("backup")
 		return
 	}
 
-	if selectDir == "" {
-		utils.LogError("缺少备份目标目录，请使用 -t 指定")
-		showModuleHelp("backup")
-		return
-	}
-
-	modules.WorldBackup(backupPath, selectDir, backupTime, loopExecution, maxBackups)
+	modules.WorldBackup(targetDir, outputDir, backupTime, repeat, maxBackups)
 }
 
 func showGeneralHelp() {
@@ -470,7 +515,7 @@ func showGeneralHelp() {
 	b.WriteString("  ping,     p   测试服务器网络延迟\n")
 	b.WriteString("  rcon,     r   远程执行控制台命令\n")
 	b.WriteString("  log,      l   分析日志文件并定位错误\n")
-	b.WriteString("  nbt,      n   查看 NBT 文件内容\n")
+	b.WriteString("  checknbt, c   查看 NBT 文件内容\n")
 	b.WriteString("  editnbt,  e   交互式 NBT 文件编辑器\n")
 	b.WriteString("  script,   s   生成服务器启动脚本\n")
 	b.WriteString("  heatmap,  h   基于玩家活跃度生成热力图\n")
@@ -575,21 +620,21 @@ var moduleHelps = map[string]string{
 		return b.String()
 	}(),
 
-	"nbt": func() string {
+	"checknbt": func() string {
 		var b strings.Builder
 		b.WriteString(utils.ColorCyan)
-		b.WriteString("NBT 文件查看模块  nbt / n\n")
+		b.WriteString("NBT 文件查看模块  checknbt / c\n")
 		b.WriteString(utils.ColorClear)
 		b.WriteString("查看 Minecraft NBT 格式文件的完整数据结构\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  bex nbt <文件路径>\n\n")
+		b.WriteString("  bex checknbt <文件路径>\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("示例:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  bex nbt level.dat\n")
-		b.WriteString("  bex nbt player.dat\n\n")
+		b.WriteString("  bex checknbt level.dat\n")
+		b.WriteString("  bex checknbt player.dat\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("说明:\n")
 		b.WriteString(utils.ColorClear)
@@ -725,18 +770,23 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("示例:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  bex dll -d ./mod.dll\n")
-		b.WriteString("  bex dll -d ./mod.dll -p Minecraft.Windows.exe\n")
-		b.WriteString("  bex dll -i\n")
-		b.WriteString("  bex dll -c\n\n")
+		b.WriteString("  bex dll mod.dll                    # 基本用法\n")
+		b.WriteString("  bex dll mod.dll -p javaw.exe       # 指定目标进程\n")
+		b.WriteString("  bex dll -i                          # 使用上次的 DLL 和进程名注入\n")
+		b.WriteString("  bex dll -c                          # 重置保存的配置\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("参数:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  -d <路径>   DLL 文件路径\n")
-		b.WriteString("  -p <进程>   目标进程名（默认 Minecraft.Windows.exe）\n")
-		b.WriteString("  -t <时间>   延迟注入，如 -t 1m30s\n")
-		b.WriteString("  -i          使用上次保存的 DLL 路径注入\n")
-		b.WriteString("  -c          重置配置文件\n")
+		b.WriteString("  <DLL路径>   要注入的 DLL 文件路径（第一个参数）\n")
+		b.WriteString("  -p <进程名>  目标进程名（默认 Minecraft.Windows.exe）\n")
+		b.WriteString("  -i           使用上次成功注入的 DLL 路径和进程名\n")
+		b.WriteString("  -c           重置配置文件中的 DLL 路径和进程名\n\n")
+		b.WriteString(utils.ColorGreen)
+		b.WriteString("说明:\n")
+		b.WriteString(utils.ColorClear)
+		b.WriteString("  • 成功注入后会自动保存 DLL 路径和目标进程名，下次可用 -i 快速注入\n")
+		b.WriteString("  • 需要以管理员身份运行\n")
+		b.WriteString("  • 支持注入到 Java 版 Minecraft（javaw.exe）和基岩版（Minecraft.Windows.exe）\n")
 		return b.String()
 	}(),
 
@@ -776,24 +826,26 @@ var moduleHelps = map[string]string{
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("用法:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  bex backup -b <工作目录> -t <备份目标> [选项...]\n\n")
+		b.WriteString("  bex backup <备份目录> [选项...]\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("示例:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  bex backup -b ./server -t worlds\n")
-		b.WriteString("  bex backup -b ./server -t worlds -v 1h -l -x 10\n\n")
+		b.WriteString("  bex backup ./server/world\n")
+		b.WriteString("  bex backup ./server/world -v 1h -r -x 10\n")
+		b.WriteString("  bex backup ./server/world -o D:/backups\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("参数:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  -b <目录>   基础工作目录（必需）\n")
-		b.WriteString("  -t <目录>   要备份的子目录（必需）\n")
+		b.WriteString("  <备份目录>  要备份的文件夹路径（必需）\n")
+		b.WriteString("  -o <路径>   指定备份输出路径（默认保存至目标目录上一级的 bex_backup 文件夹）\n")
 		b.WriteString("  -v <时间>   备份间隔，支持格式：30m、1h30m\n")
-		b.WriteString("  -x <次数>   最大保留的备份数量\n")
-		b.WriteString("  -l          循环执行模式\n\n")
+		b.WriteString("  -r          循环执行模式（需配合 -v 使用）\n")
+		b.WriteString("  -x <次数>   最大保留的备份数量\n\n")
 		b.WriteString(utils.ColorGreen)
 		b.WriteString("说明:\n")
 		b.WriteString(utils.ColorClear)
-		b.WriteString("  • 备份文件保存在工作目录下的 BEX_BackUps 文件夹\n")
+		b.WriteString("  • 默认备份至目标目录上一级的 bex_backup 文件夹\n")
+		b.WriteString("  • 指定 -o 时直接输出到该路径，不创建 bex_backup 子文件夹\n")
 		b.WriteString("  • 支持热备份（服务器运行时备份）\n")
 		return b.String()
 	}(),
@@ -801,7 +853,7 @@ var moduleHelps = map[string]string{
 
 var aliasToModule = map[string]string{
 	"q": "query", "p": "ping", "r": "rcon", "l": "log",
-	"n": "nbt", "e": "editnbt", "s": "script", "h": "heatmap", "w": "world",
+	"c": "checknbt", "e": "editnbt", "s": "script", "h": "heatmap", "w": "world",
 	"d": "dll", "i": "icon", "b": "backup",
 }
 
@@ -830,9 +882,11 @@ func showAbout() {
   • 开源协议: GNU Lesser General Public License v3.0
   • 计算机软件著作权登记: 2025SR203****
   %s• 重要声明: 
-      ├─ 本软件已取得《中华人民共和国计算机软件著作权证书》
-      ├─ 本软件未经授权不得用于任何商业用途
-      └─ 本软件禁止用于任何违法犯罪活动
+      ├─ 本软件（BeaconEX）已取得国家版权局《计算机软件著作权登记证书》并受法律保护
+      ├─ 未经书面授权，严禁任何商业用途（销售/租赁/商业集成/付费服务等）
+      ├─ 严禁违法犯罪活动（入侵服务器/破坏系统/非法获取数据等）
+      ├─ 侵权必究，违法必惩，著作权人保留一切法律追究权利
+      └─ 使用者自行承担因违反法律法规导致的一切后果
 %s`,
 		utils.ColorCyan, utils.ColorCyan, utils.ColorGreen, utils.ColorCyan,
 		utils.ColorBlue, utils.ColorClear, utils.ColorCyan,

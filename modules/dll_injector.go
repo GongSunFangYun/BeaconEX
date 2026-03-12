@@ -5,35 +5,20 @@ package modules
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"syscall"
-	"time"
 	"unsafe"
 
 	"bex/utils"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
-var injectorConfigPath string
-
-func init() {
-	baseDir := utils.GetBaseDirectory()
-	injectorConfigPath = filepath.Join(baseDir, "injector.config.json")
-}
-
-type InjectorConfig struct {
-	LastInjectPath string `json:"last_inject_path"`
-}
-
 func DLLInjector(
 	dllPath string,
 	processName string,
-	taskTime string,
-	inject bool,
-	resetConfig bool,
+	onSuccess func(absPath string),
 ) {
 	if runtime.GOOS != "windows" {
 		utils.LogError("DLL注入器仅支持 Windows 系统")
@@ -44,9 +29,7 @@ func DLLInjector(
 	injector := &DLLInjectorInstance{
 		DLLPath:     dllPath,
 		ProcessName: processName,
-		TaskTime:    taskTime,
-		Inject:      inject,
-		ResetConfig: resetConfig,
+		OnSuccess:   onSuccess,
 	}
 
 	injector.Execute()
@@ -55,47 +38,25 @@ func DLLInjector(
 type DLLInjectorInstance struct {
 	DLLPath     string
 	ProcessName string
-	TaskTime    string
-	Inject      bool
-	ResetConfig bool
+	OnSuccess   func(absPath string)
 }
 
 func (d *DLLInjectorInstance) Execute() {
-	if d.ResetConfig {
-		d.resetConfig()
+	absPath, err := filepath.Abs(d.DLLPath)
+	if err != nil {
+		utils.LogError("无法解析 DLL 路径: %s", err)
 		return
 	}
 
-	if d.TaskTime != "" {
-		d.handleTaskMode()
+	if _, err := os.Stat(absPath); err != nil {
+		utils.LogError("DLL 文件不存在或无法访问: %s", absPath)
 		return
 	}
 
-	var dllPath string
-	if d.Inject {
-		config, err := d.loadConfig()
-		if err != nil {
-			utils.LogError("读取配置文件失败: %s", err)
-			utils.LogInfo("请先使用 -d 指定 DLL 路径进行注入")
-			return
-		}
-		if config.LastInjectPath == "" {
-			utils.LogError("配置文件中没有找到上次注入的 DLL 路径")
-			utils.LogInfo("请先使用 -d 指定 DLL 路径进行注入")
-			return
-		}
-		dllPath = config.LastInjectPath
-	} else {
-		dllPath = d.DLLPath
-	}
+	success := d.InjectDLL(d.ProcessName, absPath)
 
-	success := d.InjectDLL(d.ProcessName, dllPath)
-
-	if success && !d.Inject && d.DLLPath != "" {
-		err := d.saveConfig(dllPath)
-		if err != nil {
-			return
-		}
+	if success && d.OnSuccess != nil {
+		d.OnSuccess(absPath)
 	}
 }
 
@@ -109,7 +70,7 @@ func (d *DLLInjectorInstance) InjectDLL(processName string, dllPath string) bool
 			utils.ColorYellow, utils.ColorClear, err.Error())
 		return false
 	}
-	utils.LogInfo("%s[1/9]%s 找到目标进程 PID: %d",
+	utils.LogInfo("%s[1/9]%s 定位目标进程 PID 为 %d",
 		utils.ColorBlue, utils.ColorClear, pid)
 
 	handle, err := d.openProcess(pid)
@@ -121,7 +82,7 @@ func (d *DLLInjectorInstance) InjectDLL(processName string, dllPath string) bool
 	defer func() {
 		_ = d.closeHandle(handle)
 	}()
-	utils.LogInfo("%s[2/9]%s 打开进程并获取句柄",
+	utils.LogInfo("%s[2/9]%s 打开进程并获取句柄以提升权限",
 		utils.ColorBlue, utils.ColorClear)
 
 	kernel32, err := d.getModuleHandle("kernel32.dll")
@@ -130,7 +91,7 @@ func (d *DLLInjectorInstance) InjectDLL(processName string, dllPath string) bool
 			utils.ColorYellow, utils.ColorClear, err.Error())
 		return false
 	}
-	utils.LogInfo("%s[3/9]%s 获取 kernel32 模块句柄",
+	utils.LogInfo("%s[3/9]%s 定位 kernel32.dll 并获取模块句柄",
 		utils.ColorBlue, utils.ColorClear)
 
 	loadLibraryAddr, err := d.getProcAddress(kernel32, "LoadLibraryW")
@@ -139,7 +100,7 @@ func (d *DLLInjectorInstance) InjectDLL(processName string, dllPath string) bool
 			utils.ColorYellow, utils.ColorClear, err.Error())
 		return false
 	}
-	utils.LogInfo("%s[4/9]%s 获取 LoadLibraryW 函数地址: 0x%X",
+	utils.LogInfo("%s[4/9]%s 获取 LoadLibraryW 函数地址为 0x%X",
 		utils.ColorBlue, utils.ColorClear, loadLibraryAddr)
 
 	dllPathUTF16, err := d.stringToUTF16Ptr(dllPath)
@@ -155,7 +116,7 @@ func (d *DLLInjectorInstance) InjectDLL(processName string, dllPath string) bool
 			utils.ColorYellow, utils.ColorClear, err.Error())
 		return false
 	}
-	utils.LogInfo("%s[5/9]%s 在目标进程分配内存: 0x%X",
+	utils.LogInfo("%s[5/9]%s 在目标进程分配远程内存 0x%X",
 		utils.ColorBlue, utils.ColorClear, allocAddr)
 
 	err = d.writeProcessMemory(handle, allocAddr, dllPathUTF16)
@@ -183,10 +144,10 @@ func (d *DLLInjectorInstance) InjectDLL(processName string, dllPath string) bool
 
 	err = d.waitForSingleObject(threadHandle, 5000)
 	if err != nil {
-		utils.LogWarn("%s[8/9]%s 线程执行超时，但注入可能仍然成功",
+		utils.LogWarn("%s[8/9]%s 远程线程执行 LoadLibraryW 超时，但注入可能成功",
 			utils.ColorCyan, utils.ColorClear)
 	} else {
-		utils.LogInfo("%s[8/9]%s 远程线程执行完成",
+		utils.LogInfo("%s[8/9]%s 远程线程执行 LoadLibraryW 完成",
 			utils.ColorBlue, utils.ColorClear)
 	}
 
@@ -200,13 +161,12 @@ func (d *DLLInjectorInstance) InjectDLL(processName string, dllPath string) bool
 		_ = d.virtualFreeEx(handle, allocAddr)
 		return false
 	} else {
-		utils.LogInfo("%s[9/9]%s DLL 加载成功，基地址: 0x%X",
+		utils.LogInfo("%s[9/9]%s 已确定 DLL 于基地址 0x%X 加载成功",
 			utils.ColorBlue, utils.ColorClear, exitCode)
 	}
 
 	_ = d.virtualFreeEx(handle, allocAddr)
-
-	utils.LogInfo("DLL 注入完成！")
+	utils.LogInfo("DLL 已注入完毕，若目标进程崩溃，请检查 DLL 是否适配目标进程版本")
 	return true
 }
 
@@ -417,111 +377,4 @@ func (d *DLLInjectorInstance) virtualFreeEx(handle uintptr, address uintptr) err
 	}
 
 	return nil
-}
-
-func (d *DLLInjectorInstance) handleTaskMode() {
-	utils.LogInfo("使用 Ctrl+C 取消注入")
-
-	totalSeconds := utils.ParseTimeString(d.TaskTime)
-	if totalSeconds <= 0 {
-		utils.LogError("无效的时间格式")
-		return
-	}
-
-	minutes := totalSeconds / 60
-	seconds := totalSeconds % 60
-	utils.LogInfo("定时注入模式 - 等待时间: %d分%d秒", minutes, seconds)
-
-	var dllPath string
-	if d.Inject {
-		config, err := d.loadConfig()
-		if err != nil {
-			utils.LogError("读取配置文件失败: %s", err)
-			return
-		}
-		dllPath = config.LastInjectPath
-		if dllPath == "" {
-			utils.LogError("配置文件中没有上次注入的 DLL 路径")
-			return
-		}
-	} else {
-		dllPath = d.DLLPath
-	}
-
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt)
-
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-
-	remaining := totalSeconds
-	utils.LogInfo("等待 %d 秒后进行注入...", totalSeconds)
-
-	for {
-		select {
-		case <-ticker.C:
-			remaining--
-			if remaining <= 0 {
-				utils.LogInfo("\n开始执行注入...")
-				success := d.InjectDLL(d.ProcessName, dllPath)
-				if success && !d.Inject {
-					_ = d.saveConfig(dllPath)
-				}
-				return
-			}
-			mins := remaining / 60
-			secs := remaining % 60
-			fmt.Printf("\r剩余时间: %02d分%02d秒", mins, secs)
-		case <-sigChan:
-			fmt.Println()
-			utils.LogInfo("注入任务已取消")
-			return
-		}
-	}
-}
-
-func (d *DLLInjectorInstance) loadConfig() (*InjectorConfig, error) {
-	config := &InjectorConfig{}
-
-	if !utils.FileExists(injectorConfigPath) {
-		return config, fmt.Errorf("配置文件不存在")
-	}
-
-	err := utils.LoadJSON(injectorConfigPath, config)
-	if err != nil {
-		return config, err
-	}
-
-	return config, nil
-}
-
-func (d *DLLInjectorInstance) saveConfig(dllPath string) error {
-	config := &InjectorConfig{
-		LastInjectPath: dllPath,
-	}
-
-	err := utils.SaveJSON(injectorConfigPath, config)
-	if err != nil {
-		utils.LogError("保存配置文件失败: %s", err)
-		return err
-	}
-
-	utils.LogInfo("已保存 DLL 路径到配置文件，后续注入可以直接使用\"bex dll -i\"快速注入")
-	return nil
-}
-
-func (d *DLLInjectorInstance) resetConfig() {
-	utils.LogInfo("正在重置配置文件...")
-
-	config := &InjectorConfig{
-		LastInjectPath: "",
-	}
-
-	err := utils.SaveJSON(injectorConfigPath, config)
-	if err != nil {
-		utils.LogError("重置配置文件失败: %s", err)
-		return
-	}
-
-	utils.LogInfo("配置文件重置完成")
 }

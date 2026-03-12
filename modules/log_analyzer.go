@@ -184,5 +184,6 @@ func (l *LogAnalyzerInstance) analyzeWithAI(logContent string) (string, error) {
 }
 
 func (l *LogAnalyzerInstance) displayResult(result string) {
+	utils.LogInfo("已完成日志分析并输出分析结果！")
 	fmt.Println(result)
 }

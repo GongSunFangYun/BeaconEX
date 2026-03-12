@@ -4,8 +4,8 @@ setlocal enabledelayedexpansion
 
 set APP_NAME=beaconex
 set OUT_DIR=build
-set VERSION_DISPLAY=3.0.1
-set VERSION=301
+set VERSION_DISPLAY=3.0.2
+set VERSION=302
 
 echo [INFO]  BeaconEX Build Script v%VERSION_DISPLAY%
 

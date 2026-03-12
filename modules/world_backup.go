@@ -14,13 +14,11 @@ import (
 )
 
 type BackupConfig struct {
-	BackupPath    string
-	SelectedDirs  []string
-	SelectedNames []string
-	BackupTime    int
-	LoopExecution bool
-	MaxBackups    int
-	BackupDir     string
+	TargetDir  string
+	BackupDir  string
+	BackupTime int
+	Repeat     bool
+	MaxBackups int
 }
 
 type BackupStats struct {
@@ -30,21 +28,18 @@ type BackupStats struct {
 }
 
 func WorldBackup(
-	backupPath string,
-	selectDir string,
+	targetDir string,
+	outputDir string,
 	backupTime string,
-	loopExecution bool,
+	repeat bool,
 	maxBackups int,
 ) {
 	backup := &WorldBackupInstance{
-		Config: &BackupConfig{
-			SelectedDirs:  make([]string, 0),
-			SelectedNames: make([]string, 0),
-		},
-		Stats: &BackupStats{},
+		Config: &BackupConfig{},
+		Stats:  &BackupStats{},
 	}
 
-	backup.ParseParams(backupPath, selectDir, backupTime, loopExecution, maxBackups)
+	backup.ParseParams(targetDir, outputDir, backupTime, repeat, maxBackups)
 	backup.Execute()
 }
 
@@ -56,44 +51,29 @@ type WorldBackupInstance struct {
 }
 
 func (w *WorldBackupInstance) ParseParams(
-	backupPath string,
-	selectDir string,
+	targetDir string,
+	outputDir string,
 	backupTime string,
-	loopExecution bool,
+	repeat bool,
 	maxBackups int,
 ) {
-	w.Config.BackupPath = backupPath
-	w.Config.LoopExecution = loopExecution
+	absTarget, err := filepath.Abs(targetDir)
+	if err != nil {
+		absTarget = targetDir
+	}
+	w.Config.TargetDir = absTarget
+	w.Config.Repeat = repeat
 	w.Config.MaxBackups = maxBackups
 
-	dirs := strings.Split(selectDir, ",")
-	for _, dir := range dirs {
-		dir = strings.TrimSpace(dir)
-		dir = strings.TrimSuffix(dir, "/*")
-
-		var fullPath string
-		var relName string
-
-		if filepath.IsAbs(dir) {
-			fullPath = dir
-			relName = filepath.Base(dir)
-		} else {
-			fullPath = filepath.Join(backupPath, dir)
-			relName = dir
-		}
-
-		if utils.FileExists(fullPath) {
-			w.Config.SelectedDirs = append(w.Config.SelectedDirs, fullPath)
-			w.Config.SelectedNames = append(w.Config.SelectedNames, relName)
-		} else {
-			utils.LogWarn("目录不存在: %s", fullPath)
-		}
+	if outputDir != "" {
+		w.Config.BackupDir = outputDir
+	} else {
+		w.Config.BackupDir = filepath.Join(filepath.Dir(absTarget), "bex_backup")
 	}
 
 	if backupTime != "" {
 		w.Config.BackupTime = utils.ParseTimeString(backupTime)
 	}
-	w.Config.BackupDir = filepath.Join(backupPath, "BEX_BackUps")
 }
 
 func (w *WorldBackupInstance) Execute() {
@@ -101,8 +81,7 @@ func (w *WorldBackupInstance) Execute() {
 		return
 	}
 
-	utils.LogInfo("备份工作目录: %s", w.Config.BackupPath)
-	utils.LogInfo("计划备份目录: %s", strings.Join(w.Config.SelectedNames, ", "))
+	utils.LogInfo("备份目标目录: %s", w.Config.TargetDir)
 	utils.LogInfo("备份保存目录: %s", w.Config.BackupDir)
 
 	if w.Config.BackupTime > 0 {
@@ -121,7 +100,7 @@ func (w *WorldBackupInstance) Execute() {
 	w.Running = true
 	w.StartTime = time.Now()
 
-	if w.Config.LoopExecution && w.Config.BackupTime > 0 {
+	if w.Config.Repeat && w.Config.BackupTime > 0 {
 		w.loopBackup()
 	} else if w.Config.BackupTime > 0 {
 		utils.LogInfo("等待 %s 后执行备份...", w.formatDuration(w.Config.BackupTime))
@@ -133,13 +112,8 @@ func (w *WorldBackupInstance) Execute() {
 }
 
 func (w *WorldBackupInstance) validateArgs() bool {
-	if !utils.FileExists(w.Config.BackupPath) {
-		utils.LogError("备份工作目录不存在: %s", w.Config.BackupPath)
-		return false
-	}
-
-	if len(w.Config.SelectedDirs) == 0 {
-		utils.LogError("没有找到有效的备份目录")
+	if !utils.FileExists(w.Config.TargetDir) {
+		utils.LogError("备份目标目录不存在: %s", w.Config.TargetDir)
 		return false
 	}
 
@@ -160,15 +134,8 @@ func (w *WorldBackupInstance) performBackup() {
 	w.Stats.BackupNum++
 
 	timestamp := time.Now().Format("2006-01-02_15-04-05")
-
-	var backupName string
-	if len(w.Config.SelectedNames) == 1 {
-		dirName := filepath.Base(w.Config.SelectedNames[0])
-		backupName = fmt.Sprintf("%s_backup_%s.zip", dirName, timestamp)
-	} else {
-		backupName = fmt.Sprintf("backup_%s.zip", timestamp)
-	}
-
+	dirName := filepath.Base(w.Config.TargetDir)
+	backupName := fmt.Sprintf("%s_backup_%s.zip", dirName, timestamp)
 	backupPath := filepath.Join(w.Config.BackupDir, backupName)
 
 	utils.LogInfo("开始执行第 %d 次备份...", w.Stats.BackupNum)
@@ -193,15 +160,10 @@ func (w *WorldBackupInstance) performBackup() {
 		}
 	}(zipWriter)
 
-	fileCount := 0
-	for i, dir := range w.Config.SelectedDirs {
-		zipName := w.Config.SelectedNames[i]
-		count, err := w.addToZip(zipWriter, dir, zipName)
-		if err != nil {
-			utils.LogError("添加目录失败 %s: %s", zipName, err)
-			continue
-		}
-		fileCount += count
+	fileCount, err := w.addToZip(zipWriter, w.Config.TargetDir, dirName)
+	if err != nil {
+		utils.LogError("添加目录失败 %s: %s", dirName, err)
+		return
 	}
 
 	fileInfo, err := zipFile.Stat()
@@ -213,8 +175,8 @@ func (w *WorldBackupInstance) performBackup() {
 	w.Stats.FileCount = fileCount
 	w.Stats.TotalSize = fileInfo.Size()
 
-	utils.LogInfo("%s已将存档备份至 %s (%s, 共 %d 个文件)",
-		utils.ColorGreen, backupName, utils.FormatFileSize(fileInfo.Size()), fileCount)
+	utils.LogInfo("%s已将存档备份至 %s (%s, 共 %d 个文件)%s",
+		utils.ColorGreen, backupName, utils.FormatFileSize(fileInfo.Size()), fileCount, utils.ColorClear)
 }
 
 func (w *WorldBackupInstance) addToZip(zipWriter *zip.Writer, sourceDir, basePath string) (int, error) {
@@ -350,7 +312,7 @@ func (w *WorldBackupInstance) loopBackup() {
 			w.performBackup()
 
 		case <-sigChan:
-			utils.LogInfo("\n备份任务已取消")
+			utils.LogInfo("备份任务已取消")
 			return
 		}
 	}
@@ -369,7 +331,7 @@ func (w *WorldBackupInstance) countdown(seconds int) {
 
 	for i := seconds; i > 0; i-- {
 		timeStr := w.formatDuration(i)
-		fmt.Printf("\r正在进行第 %d%s 次备份，下次备份将在 %s 后执行",
+		utils.LogInfo("\r正在进行第 %d%s 次备份，下次备份将在 %s后执行",
 			nextNum, maxStr, timeStr)
 		time.Sleep(1 * time.Second)
 	}

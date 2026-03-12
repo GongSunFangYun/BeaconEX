@@ -163,58 +163,33 @@ func (c *RCONClient) sendPacketLocked(pktType int32, payload string) (string, er
 		return "", fmt.Errorf("发送失败: %v", err)
 	}
 
-	if pktType == 3 {
-		lenBuf := make([]byte, 4)
-		if _, err := io.ReadFull(c.conn, lenBuf); err != nil {
-			return "", fmt.Errorf("读取认证响应失败: %v", err)
-		}
-		pktLen := binary.LittleEndian.Uint32(lenBuf)
-		if pktLen < 10 {
-			return "", fmt.Errorf("认证响应包太短: %d", pktLen)
-		}
-		pktBuf := make([]byte, pktLen)
-		if _, err := io.ReadFull(c.conn, pktBuf); err != nil {
-			return "", fmt.Errorf("读取认证响应包失败: %v", err)
-		}
-		respID := int32(binary.LittleEndian.Uint32(pktBuf[0:4]))
-		if respID == -1 {
-			return "", fmt.Errorf("密码错误")
-		}
-		return "", nil
-	}
-
 	lenBuf := make([]byte, 4)
 	if _, err := io.ReadFull(c.conn, lenBuf); err != nil {
-		if err == io.EOF {
-			return "", io.EOF
-		}
 		return "", fmt.Errorf("读取响应长度失败: %v", err)
 	}
-
 	pktLen := binary.LittleEndian.Uint32(lenBuf)
 	if pktLen < 10 {
 		return "", fmt.Errorf("响应包太短: %d", pktLen)
 	}
-
 	pktBuf := make([]byte, pktLen)
 	if _, err := io.ReadFull(c.conn, pktBuf); err != nil {
 		return "", fmt.Errorf("读取响应包失败: %v", err)
 	}
 
 	respID := int32(binary.LittleEndian.Uint32(pktBuf[0:4]))
-	respPayload := pktBuf[8 : pktLen-2]
-	padding := pktBuf[pktLen-2:]
 
-	if padding[0] != 0 || padding[1] != 0 {
-		return "", fmt.Errorf("无效的包填充")
-	}
 	if respID == -1 {
-		return "", fmt.Errorf("登录失败")
-	}
-	if respID != reqID {
-		return "", fmt.Errorf("请求ID不匹配: 发送 %d, 收到 %d", reqID, respID)
+		if pktType == 3 {
+			return "", fmt.Errorf("密码错误")
+		}
+		return "", fmt.Errorf("认证已失效")
 	}
 
+	if pktType == 3 {
+		return "", nil
+	}
+
+	respPayload := pktBuf[8 : pktLen-2]
 	return string(respPayload), nil
 }
 
@@ -230,18 +205,35 @@ func (c *RCONClient) Command(cmd string) (string, error) {
 
 	response, err := c.sendPacketLocked(2, cmd)
 	if err != nil {
-		c.conn = nil
-		if err := c.connectLocked(); err != nil {
-			return "", fmt.Errorf("重连失败: %v", err)
-		}
-		response, err = c.sendPacketLocked(2, cmd)
-		if err != nil {
+		if isNetworkError(err) {
 			c.conn = nil
+			if reconnErr := c.connectLocked(); reconnErr != nil {
+				return "", fmt.Errorf("重连失败: %v", reconnErr)
+			}
+			response, err = c.sendPacketLocked(2, cmd)
+			if err != nil {
+				c.conn = nil
+				return "", err
+			}
+		} else {
 			return "", err
 		}
 	}
 
 	return response, nil
+}
+
+func isNetworkError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := err.Error()
+	return strings.Contains(msg, "EOF") ||
+		strings.Contains(msg, "connection reset") ||
+		strings.Contains(msg, "broken pipe") ||
+		strings.Contains(msg, "use of closed") ||
+		strings.Contains(msg, "读取响应长度失败") ||
+		strings.Contains(msg, "读取响应包失败")
 }
 
 func RconExecutorEntry(loginStr string) {

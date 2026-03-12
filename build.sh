@@ -10,7 +10,7 @@ log() {
     printf "[%-5s] %s\n" "$LEVEL" "$*"
 }
 
-VERSION_DISPLAY="3.0.1"
+VERSION_DISPLAY="3.0.2"
 VERSION="${VERSION_DISPLAY//.}"
 
 GO_VER=$(go version 2>&1)

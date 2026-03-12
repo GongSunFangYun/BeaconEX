@@ -120,7 +120,7 @@ func QueryServerAuto(target string) {
 	}()
 
 	var e []string
-	timeout := time.After(6 * time.Second)
+	timeout := time.After(10 * time.Second)
 
 	var javaResult *result
 	var bedrockResult *result
@@ -147,15 +147,15 @@ func QueryServerAuto(target string) {
 			if javaResult != nil || bedrockResult != nil {
 				break
 			}
-			utils.LogError("查询超时 (6秒)")
+			utils.LogError("查询已超时[10秒]...")
 			return
 		}
 	}
 
 	if javaResult != nil && bedrockResult != nil {
-		utils.LogWarn("%s### 似乎双版本查询均出现了响应(这可能是目标主机开设了跨版本代理服务器) ###%s",
-			utils.ColorBrightYellow, utils.ColorClear)
-		utils.LogInfo("已返回汇总查询结果...")
+		utils.LogWarn("你在查询互通服务器吗？")
+		utils.LogWarn("还是说目标主机存在两个位于默认端口的双版本服务器？")
+		utils.LogWarn("好啊...已处理这两个服务器的信息并返回结果：")
 		utils.LogInfo("━━━━━━━━━━━━ JE ━━━━━━━━━━━━")
 		if javaInfo, ok := javaResult.info.(*JavaServerInfo); ok {
 			displayServerInfo(target, javaInfo, javaResult.latency, true)
@@ -223,15 +223,11 @@ func displayJavaDetails(info *JavaServerInfo) {
 	if len(info.Players.Sample) > 0 {
 		utils.LogInfo("玩家列表:")
 		for i, player := range info.Players.Sample {
-			if i < 10 {
+			if i > 0 {
 				coloredName := utils.ParseMinecraftFormat(player.Name)
 				utils.LogInfo("  %s•%s %s",
 					utils.ColorPurple, utils.ColorClear, coloredName)
 			}
-		}
-		if len(info.Players.Sample) > 10 {
-			utils.LogInfo("  %s... 还有 %d 名玩家%s",
-				utils.ColorCyan, len(info.Players.Sample)-10, utils.ColorClear)
 		}
 	} else {
 		utils.LogInfo("玩家列表: 无")

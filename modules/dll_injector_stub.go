@@ -5,8 +5,6 @@ package modules
 func DLLInjector(
 	dllPath string,
 	processName string,
-	taskTime string,
-	inject bool,
-	resetConfig bool,
+	onSuccess func(absPath string),
 ) {
 }
