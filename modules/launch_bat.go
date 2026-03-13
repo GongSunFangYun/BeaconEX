@@ -16,7 +16,7 @@ const (
 	defaultModel  = "deepseek-ai/DeepSeek-V3.2"
 )
 
-const APIKey = "ms-49288b6e-cdb7-4c14-910d-3f5255e9887d"
+const APIKey = "ms-otto-mom"
 
 func resolveAPIKey() (string, error) {
 	return APIKey, nil
